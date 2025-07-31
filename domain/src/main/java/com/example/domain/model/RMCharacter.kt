@@ -1,6 +1,6 @@
 package com.example.domain.model
 
-data class Character(
+data class RMCharacter(
     val id: Int,
     val name: String,
     val species: String,

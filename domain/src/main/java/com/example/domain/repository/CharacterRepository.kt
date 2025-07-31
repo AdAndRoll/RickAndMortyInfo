@@ -1,5 +1,7 @@
 package com.example.domain.repository
 
+import androidx.paging.PagingData
+import com.example.domain.model.RMCharacter
 import com.example.domain.model.CharacterFilter
 import kotlinx.coroutines.flow.Flow
 
@@ -11,7 +13,7 @@ interface CharacterRepository {
      */
     fun getCharacters(
         filter: CharacterFilter
-    ): Flow<List<Character>>
+    ): Flow<PagingData<RMCharacter>>
 
     /**
      * Обновить список персонажей (например, при Pull-to-Refresh).

@@ -15,6 +15,7 @@ kotlin {
 dependencies {
     // Корутинсы для Flow и suspend функций
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.paging.common.jvm)
 
     // Тесты (если нужны)
     testImplementation(kotlin("test"))

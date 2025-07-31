@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 
 }
 
@@ -42,6 +43,12 @@ android {
 }
 
 dependencies {
+
+    implementation(project(":domain")) {
+        exclude(group = "androidx.paging", module = "paging-common-jvm")
+    } // Зависимость от модуля domain
+    implementation(project(":data"))   // Зависимость от модуля data
+
     // Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -63,6 +70,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.moshi)
     implementation(libs.moshi.kotlin)
+
+    implementation(libs.logging.interceptor)
 
     // Room
     implementation(libs.androidx.room.runtime)
