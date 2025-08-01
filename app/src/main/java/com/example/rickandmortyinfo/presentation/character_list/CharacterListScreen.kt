@@ -14,57 +14,21 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
-import coil.ImageLoader
-import coil.request.ImageRequest
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterItem
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterListToolbar
 
 @Composable
 fun CharacterListScreen(
-    viewModel: CharactersViewModel = hiltViewModel(),
-    imageLoader: ImageLoader = ImageLoader(LocalContext.current)
+    viewModel: CharactersViewModel = hiltViewModel()
 ) {
     val characters = viewModel.characters.collectAsLazyPagingItems()
-    val context = LocalContext.current
-
-    // Индекс последней предзагруженной страницы (размер страницы 20)
-    var lastPreloadedPage = remember { -1 }
-    val pageSize = 20
-
-    LaunchedEffect(characters.loadState) {
-        if (characters.loadState.append !is LoadState.Loading && characters.itemCount > 0) {
-            val currentPage = (characters.itemCount - 1) / pageSize
-            val nextPage = currentPage + 1
-
-            if (nextPage > lastPreloadedPage) {
-                val startIndex = nextPage * pageSize
-                val endIndexExclusive = startIndex + pageSize
-
-                for (index in startIndex until endIndexExclusive) {
-                    if (index >= characters.itemCount) break
-
-                    val character = characters[index]
-                    if (character?.imageUrl != null && character.imageUrl.isNotBlank()) {
-                        val request = ImageRequest.Builder(context)
-                            .data(character.imageUrl)
-                            .build()
-                        imageLoader.enqueue(request)
-                    }
-                }
-                lastPreloadedPage = nextPage
-            }
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -82,7 +46,7 @@ fun CharacterListScreen(
                 .padding(paddingValues)
         ) {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2), // 2 столбца
+                columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -104,7 +68,6 @@ fun CharacterListScreen(
                     }
                 }
 
-                // Обработка состояний загрузки и ошибок
                 characters.apply {
                     when {
                         loadState.refresh is LoadState.Loading -> {

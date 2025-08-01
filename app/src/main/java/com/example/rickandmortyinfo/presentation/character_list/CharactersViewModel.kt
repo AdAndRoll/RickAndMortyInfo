@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/rickandmortyinfo/presentation/character_list/CharactersViewModel.kt
 package com.example.rickandmortyinfo.presentation.character_list
 
 import androidx.lifecycle.ViewModel
@@ -10,42 +9,49 @@ import com.example.domain.model.CharacterFilter
 import com.example.domain.usecases.GetCharactersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged // <-- Добавьте этот импорт, если его нет
-import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * [ViewModel] для экрана списка персонажей.
- * Отвечает за получение данных о персонажах с пагинацией и управление состоянием UI.
+ * ViewModel для экрана списка персонажей.
+ * Использует более надежный паттерн для управления Paging Data с помощью SharedFlow.
  */
 @HiltViewModel
 class CharactersViewModel @Inject constructor(
     private val getCharactersUseCase: GetCharactersUseCase
 ) : ViewModel() {
 
-    // MutableStateFlow для хранения текущих параметров фильтрации
+    // MutableStateFlow для хранения текущих параметров фильтрации, но без прямого Flow
+    // для PagingData. Он используется только для UI-состояния фильтров.
     private val _currentFilter = MutableStateFlow(CharacterFilter())
     val currentFilter: StateFlow<CharacterFilter> = _currentFilter.asStateFlow()
 
-    // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Только ОДИН Flow для PagingData ---
-    // Flow<PagingData<RMCharacter>> для отображения списка персонажей.
-    // Этот Flow будет автоматически реагировать на изменения _currentFilter
-    // благодаря flatMapLatest.
+    // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Триггер для перезагрузки PagingData ---
+    // Используем SharedFlow, чтобы явно отправлять "команду" на перезагрузку Pager.
+    private val _filterTrigger = MutableSharedFlow<CharacterFilter>(
+        replay = 1, // Хранит последнее значение для новых подписчиков
+        extraBufferCapacity = 1
+    )
+
+    // Flow<PagingData<RMCharacter>>, который реагирует на _filterTrigger
     @OptIn(ExperimentalCoroutinesApi::class)
-    val characters: Flow<PagingData<RMCharacter>> = _currentFilter
-        .flatMapLatest { filter -> // Каждый раз, когда _currentFilter меняется, создаем новый PagingData Flow
+    val characters: Flow<PagingData<RMCharacter>> = _filterTrigger
+        .flatMapLatest { filter ->
             getCharactersUseCase.execute(filter)
         }
-        .cachedIn(viewModelScope) // Кэшируем PagingData в области видимости ViewModel
+        .cachedIn(viewModelScope)
+
+    init {
+        // Инициируем первую загрузку с пустым фильтром при создании ViewModel.
+        viewModelScope.launch {
+            _filterTrigger.emit(CharacterFilter())
+        }
+    }
 
     /**
      * Метод для установки или обновления параметров фильтрации.
-     * Вызывается из UI при изменении параметров поиска/фильтрации.
-     * При изменении _currentFilter, `characters` Flow автоматически перезапустит загрузку.
+     * Обновляет StateFlow для UI и отправляет сигнал в SharedFlow для перезагрузки Paging.
      *
      * @param name Имя персонажа для фильтрации (null, чтобы оставить текущее значение).
      * @param status Статус персонажа для фильтрации (null, чтобы оставить текущее значение).
@@ -59,22 +65,24 @@ class CharactersViewModel @Inject constructor(
             species = species ?: _currentFilter.value.species,
             gender = gender ?: _currentFilter.value.gender
         )
-        // Обновляем фильтр только если он действительно изменился, чтобы избежать лишних перезагрузок PagingData
-        // Эта проверка необходима, т.к. distinctUntilChanged() выше проверяет только Flow.
-        // Если _currentFilter.value уже равно newFilter, мы просто не обновляем StateFlow,
-        // что предотвратит его испускание и сэкономит ресурсы.
+        // Обновляем фильтр только если он действительно изменился
         if (_currentFilter.value != newFilter) {
             _currentFilter.value = newFilter
+            // Отправляем сигнал на перезагрузку Pager с новым фильтром
+            viewModelScope.launch {
+                _filterTrigger.emit(newFilter)
+            }
         }
     }
 
     // Метод для очистки всех фильтров и сброса списка персонажей
     fun clearFilters() {
-        // Создаем пустой CharacterFilter для сброса всех полей
         val clearedFilter = CharacterFilter()
-        // Обновляем фильтр только если он отличается от текущего
         if (_currentFilter.value != clearedFilter) {
             _currentFilter.value = clearedFilter
+            viewModelScope.launch {
+                _filterTrigger.emit(clearedFilter)
+            }
         }
     }
 }

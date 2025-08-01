@@ -3,10 +3,7 @@ package com.example.rickandmortyinfo.presentation.character_list.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,7 +29,9 @@ fun CharacterItem(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.width(160.dp), // ширина фиксирована
+        // Используем fillMaxWidth, чтобы макеты в LazyVerticalGrid
+        // всегда были одинаковой ширины.
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -42,12 +41,15 @@ fun CharacterItem(
         ) {
             AsyncImage(
                 model = imageUrl,
-                contentDescription = "Image of $name",
+                contentDescription = "Изображение персонажа $name",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(4.dp))
-                    .heightIn(max = 200.dp),  // максимум по высоте, чтобы не было слишком высокого фото
-                contentScale = ContentScale.Fit,  // или ContentScale.Inside
+                    // !!! Ключевое изменение: задаем фиксированное соотношение сторон
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(4.dp)),
+                // !!! Ключевое изменение: используем ContentScale.Crop, чтобы
+                // изображение всегда заполняло доступное пространство
+                contentScale = ContentScale.Crop,
                 placeholder = painterResource(id = R.drawable.ic_placeholder),
                 error = painterResource(id = R.drawable.ic_error)
             )
@@ -68,4 +70,3 @@ fun CharacterItem(
         }
     }
 }
-

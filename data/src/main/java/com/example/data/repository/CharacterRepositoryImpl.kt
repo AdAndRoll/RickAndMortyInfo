@@ -1,4 +1,3 @@
-// data/repository/CharacterRepositoryImpl.kt
 package com.example.data.repository
 
 import androidx.paging.ExperimentalPagingApi
@@ -20,12 +19,7 @@ import javax.inject.Inject
 
 /**
  * Реализация репозитория для работы с данными о персонажах.
- * Координирует получение данных из удаленного и локального источников,
- * используя Paging 3 и RemoteMediator для эффективной пагинации и кэширования.
- *
- * @param characterRemoteDataSource Удаленный источник данных для сетевых запросов.
- * @param characterLocalDataSource Локальный источник данных для работы с Room.
- * @param characterDatabase Экземпляр базы данных Room, необходимый для RemoteMediator.
+ * Координирует получение данных из удаленного и локального источников.
  */
 @OptIn(ExperimentalPagingApi::class)
 class CharacterRepositoryImpl @Inject constructor(
@@ -40,7 +34,10 @@ class CharacterRepositoryImpl @Inject constructor(
         return Pager(
             config = PagingConfig(
                 pageSize = 30,
-                enablePlaceholders = false,
+                // !!! ИЗМЕНЕНИЕ: Включаем заглушки для стабилизации макета.
+                // Это поможет LazyVerticalGrid сохранять позицию прокрутки,
+                // пока данные загружаются.
+                enablePlaceholders = true,
                 initialLoadSize = 20,
                 prefetchDistance = 20
             ),
@@ -48,23 +45,14 @@ class CharacterRepositoryImpl @Inject constructor(
                 characterRemoteDataSource = characterRemoteDataSource,
                 characterLocalDataSource = characterLocalDataSource,
                 characterDatabase = characterDatabase,
-                filter = filter // Передаем фильтр в медиатор
+                filter = filter
             ),
+            // PagingSourceFactory создает новый PagingSource каждый раз,
+            // когда Pager нужно получить доступ к данным.
             pagingSourceFactory = {
-                // Здесь мы теперь используем метод из LocalDataSource,
-                // который возвращает PagingSource.
-                // Если бы Room поддерживал фильтрацию напрямую в getAllCharacters,
-                // мы могли бы передать filter сюда.
-                // Но поскольку RemoteMediator управляет загрузкой,
-                // а Room просто выдает то, что есть, этот метод будет брать все кэшированные данные.
-                // Фильтрация будет происходить на уровне UI или в маппере,
-                // если она требуется для PagingSource.
-                // Для Room-backed PagingSource, фильтрация (по name, status и т.д.)
-                // должна быть встроена в запрос Room DAO.
-                // НО! Поскольку фильтры передаются в RemoteMediator,
-                // это означает, что сетевой запрос уже будет отфильтрован,
-                // и в кэш попадут только отфильтрованные данные.
-                // Поэтому getAllCharacters без параметров фильтра тут логичен.
+                // !!! ИЗМЕНЕНИЕ: Убедимся, что PagingSource берется из DAO.
+                // Это гарантирует, что Paging Library работает напрямую
+                // с изменяемыми данными из Room.
                 characterLocalDataSource.getAllCharacters()
             }
         ).flow.map { pagingData ->
