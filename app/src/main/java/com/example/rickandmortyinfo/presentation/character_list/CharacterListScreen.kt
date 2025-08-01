@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/rickandmortyinfo/presentation/character_list/CharacterListScreen.kt
 package com.example.rickandmortyinfo.presentation.character_list
 
 import androidx.compose.foundation.layout.Arrangement
@@ -8,7 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,10 +26,8 @@ import com.example.rickandmortyinfo.presentation.character_list.components.Chara
 
 @Composable
 fun CharacterListScreen(
-    // ViewModel автоматически инжектируется благодаря @HiltViewModel и hiltViewModel()
     viewModel: CharactersViewModel = hiltViewModel()
 ) {
-    // Собираем Flow<PagingData<RMCharacter>> из ViewModel в LazyPagingItems
     val characters = viewModel.characters.collectAsLazyPagingItems()
 
     Scaffold(
@@ -42,17 +41,17 @@ fun CharacterListScreen(
             )
         }
     ) { paddingValues ->
-        // Box используется для центрирования индикатора загрузки или текста ошибки
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Отображение списка персонажей
-            LazyColumn(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2), // Указываем 2 столбца
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp), // Отступы между элементами по горизонтали
+                verticalArrangement = Arrangement.spacedBy(8.dp) // Отступы между элементами по вертикали
             ) {
                 items(
                     count = characters.itemCount,
@@ -75,9 +74,12 @@ fun CharacterListScreen(
                     when {
                         // Начальная загрузка или обновление
                         loadState.refresh is LoadState.Loading -> {
-                            item {
+                            item(
+                                // Исправление здесь: используем лямбду с maxLineSpan
+                                span = { GridItemSpan(maxLineSpan) }
+                            ) {
                                 Box(
-                                    modifier = Modifier.fillParentMaxSize(),
+                                    modifier = Modifier.fillMaxWidth(),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     CircularProgressIndicator()
@@ -86,7 +88,10 @@ fun CharacterListScreen(
                         }
                         // Загрузка дополнительных элементов (скролл вниз)
                         loadState.append is LoadState.Loading -> {
-                            item {
+                            item(
+                                // Исправление здесь: используем лямбду с maxLineSpan
+                                span = { GridItemSpan(maxLineSpan) }
+                            ) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -100,9 +105,12 @@ fun CharacterListScreen(
                         // Ошибка при начальной загрузке
                         loadState.refresh is LoadState.Error -> {
                             val error = loadState.refresh as LoadState.Error
-                            item {
+                            item(
+                                // Исправление здесь: используем лямбду с maxLineSpan
+                                span = { GridItemSpan(maxLineSpan) }
+                            ) {
                                 Column(
-                                    modifier = Modifier.fillParentMaxSize(),
+                                    modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
@@ -117,7 +125,10 @@ fun CharacterListScreen(
                         // Ошибка при загрузке дополнительных элементов
                         loadState.append is LoadState.Error -> {
                             val error = loadState.append as LoadState.Error
-                            item {
+                            item(
+                                // Исправление здесь: используем лямбду с maxLineSpan
+                                span = { GridItemSpan(maxLineSpan) }
+                            ) {
                                 Text(
                                     text = "Error loading more: ${error.error.localizedMessage ?: "Unknown error"}",
                                     modifier = Modifier
@@ -129,6 +140,14 @@ fun CharacterListScreen(
                         }
                     }
                 }
+            }
+
+            // Дополнительная логика для начального пустого состояния или полной ошибки
+            if (characters.loadState.refresh is LoadState.NotLoading && characters.itemCount == 0) {
+                Text(
+                    text = "No characters found.",
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
         }
     }
