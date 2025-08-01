@@ -24,6 +24,7 @@ interface RickAndMortyApi {
         @Query("name") name: String? = null,
         @Query("status") status: String? = null,
         @Query("species") species: String? = null,
-        @Query("gender") gender: String? = null
-    ): CharactersResponse
+        @Query("type") type: String? = null,       // Этот параметр для "типа", а не "пола"
+        @Query("gender") gender: String? = null    // <--- Вот этот параметр для "пола"
+    ): CharactersResponse // Замените на вашу модель ответа
 }

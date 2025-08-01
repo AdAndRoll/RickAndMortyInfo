@@ -12,5 +12,11 @@ data class RemoteKeyEntity(
 
     val prevKey: Int?, // Предыдущая страница (если нужна прокрутка вверх)
     val nextKey: Int?, // Следующая страница для загрузки
-    val createdAt: Long // Метка времени для определения "свежести" кэша
+    val createdAt: Long,// Метка времени для определения "свежести" кэша
+    // !!! НОВЫЕ ПОЛЯ: Добавлены поля для сохранения параметров фильтра
+    val filterName: String? = null,
+    val filterStatus: String? = null,
+    val filterSpecies: String? = null,
+    val filterType: String? = null,
+    val filterGender: String? = null
 )

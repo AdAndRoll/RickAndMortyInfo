@@ -23,6 +23,7 @@ class CharacterRemoteMediator(
     private val characterRemoteDataSource: CharacterRemoteDataSource,
     private val characterLocalDataSource: CharacterLocalDataSource,
     private val characterDatabase: CharacterDatabase,
+    // !!! ИЗМЕНЕНИЕ: Filter теперь является частью RemoteMediator
     private val filter: CharacterFilter
 ) : RemoteMediator<Int, CharacterEntity>() {
 
@@ -30,22 +31,33 @@ class CharacterRemoteMediator(
     private val TAG = "CharacterRemoteMediator"
 
     /**
-     * Эта функция теперь проверяет не только время, но и целостность данных.
-     * Если есть RemoteKey, но нет персонажей, мы считаем кэш некорректным
-     * и принудительно делаем полный REFRESH.
+     * Эта функция теперь проверяет не только время, но и целостность данных
+     * и совпадение фильтров.
      */
     override suspend fun initialize(): InitializeAction {
-        val lastUpdateTime = characterLocalDataSource.getRemoteKey()?.createdAt ?: 0L
+        val remoteKey = characterLocalDataSource.getRemoteKey()
+        val lastUpdateTime = remoteKey?.createdAt ?: 0L
         val characterCount = characterLocalDataSource.getAllCharactersCount()
         val now = System.currentTimeMillis()
         val isCacheOutdated = now - lastUpdateTime >= CACHE_TIMEOUT
         val isCacheInconsistent = lastUpdateTime > 0 && characterCount == 0
 
+        // !!! КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Проверяем, изменился ли фильтр
+        val isFilterChanged = remoteKey?.let {
+            it.filterName != filter.name ||
+                    it.filterStatus != filter.status ||
+                    it.filterSpecies != filter.species ||
+                    it.filterType != filter.type ||    // <--- ДОБАВИТЬ ПРОВЕРКУ ДЛЯ TYPE
+                    it.filterGender != filter.gender
+        } ?: false
+
         Log.d(TAG, "Checking cache integrity. Last update: $lastUpdateTime, character count: $characterCount")
         Log.d(TAG, "Is cache outdated: $isCacheOutdated, Is cache inconsistent: $isCacheInconsistent")
+        Log.d(TAG, "Is filter changed: $isFilterChanged")
 
-        return if (isCacheOutdated || isCacheInconsistent) {
-            Log.d(TAG, "Cache is outdated or inconsistent. Launching initial REFRESH.")
+
+        return if (isCacheOutdated || isCacheInconsistent || isFilterChanged) {
+            Log.d(TAG, "Cache is outdated, inconsistent, or filter has changed. Launching initial REFRESH.")
             InitializeAction.LAUNCH_INITIAL_REFRESH
         } else {
             Log.d(TAG, "Cache is fresh and consistent. Skipping initial REFRESH.")
@@ -90,6 +102,7 @@ class CharacterRemoteMediator(
                 name = filter.name,
                 status = filter.status,
                 species = filter.species,
+                type = filter.type,
                 gender = filter.gender
             )
             Log.d(TAG, "API request for page $currentPage finished.")
@@ -102,16 +115,23 @@ class CharacterRemoteMediator(
 
                     characterDatabase.withTransaction {
                         if (loadType == LoadType.REFRESH) {
+                            // !!! КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Очищаем базу данных при смене фильтра
                             characterLocalDataSource.clearAllCharacters()
                             characterLocalDataSource.clearAllRemoteKeys()
-                            Log.d(TAG, "DB cleared for REFRESH.")
+                            Log.d(TAG, "DB cleared for REFRESH due to filter change.")
                         }
 
                         val newRemoteKey = RemoteKeyEntity(
                             id = 0,
                             prevKey = if (currentPage == 1) null else currentPage - 1,
                             nextKey = if (endOfPaginationReached) null else currentPage + 1,
-                            createdAt = System.currentTimeMillis()
+                            createdAt = System.currentTimeMillis(),
+                            // !!! НОВЫЕ ПОЛЯ: Сохраняем фильтр в RemoteKeyEntity
+                            filterName = filter.name,
+                            filterStatus = filter.status,
+                            filterSpecies = filter.species,
+                            filterType = filter.type,
+                            filterGender = filter.gender
                         )
                         characterLocalDataSource.insertRemoteKey(newRemoteKey)
                         characterLocalDataSource.insertCharacters(characters.map { it.toCharacterEntity() })

@@ -9,50 +9,55 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.example.rickandmortyinfo.presentation.character_filter.CharacterFilterScreen
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterItem
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterListToolbar
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterListScreen(
     viewModel: CharactersViewModel = hiltViewModel()
 ) {
     val characters = viewModel.characters.collectAsLazyPagingItems()
+    var showFilterSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             CharacterListToolbar(
                 title = "Rick and Morty Characters",
                 onFilterClick = {
-                    // TODO: Реализовать логику открытия окна фильтрации
+                    // Открываем нижний модальный лист при нажатии на кнопку фильтра
+                    showFilterSheet = true
                 }
             )
         }
     ) { paddingValues ->
-        // Отображаем полноэкранный индикатор загрузки только при первой загрузке
-        if (characters.loadState.refresh is LoadState.Loading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            // Как только первая порция данных загружена, показываем список
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Отображаем полноэкранный индикатор загрузки только при первой загрузке (REFRESH)
+            if (characters.loadState.refresh is LoadState.Loading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                // Как только первая порция данных загружена, показываем список
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxSize(),
@@ -73,7 +78,7 @@ fun CharacterListScreen(
                         }
                     }
 
-                    // Обработка состояния загрузки дополнительных страниц (пагинация)
+                    // Обработка состояния загрузки дополнительных страниц (APPEND)
                     characters.apply {
                         when (loadState.append) {
                             is LoadState.Loading -> {
@@ -112,6 +117,34 @@ fun CharacterListScreen(
                     )
                 }
             }
+        }
+    }
+
+    // Отображаем экран фильтра как ModalBottomSheet
+    if (showFilterSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showFilterSheet = false
+            },
+            sheetState = sheetState
+        ) {
+            CharacterFilterScreen(
+                onApplyFilter = { newFilter ->
+                    viewModel.onFilterApplied(newFilter)
+                    coroutineScope.launch {
+                        // !!! Добавлена явная команда на обновление списка после применения фильтра
+                        characters.refresh()
+                        sheetState.hide()
+                        showFilterSheet = false
+                    }
+                },
+                onDismiss = {
+                    coroutineScope.launch {
+                        sheetState.hide()
+                        showFilterSheet = false
+                    }
+                }
+            )
         }
     }
 }

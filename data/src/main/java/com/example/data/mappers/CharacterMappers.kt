@@ -18,6 +18,7 @@ fun CharacterDto.toCharacterEntity(): CharacterEntity {
         id = this.id,
         name = this.name,
         species = this.species,
+        type = this.type,
         status = this.status,
         gender = this.gender,
         imageUrl = this.image

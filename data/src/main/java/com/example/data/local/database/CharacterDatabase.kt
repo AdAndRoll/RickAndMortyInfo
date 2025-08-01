@@ -21,7 +21,7 @@ import com.example.data.local.entity.RemoteKeyEntity
  */
 @Database(
     entities = [CharacterEntity::class, RemoteKeyEntity::class],
-    version = 3,
+    version = 6,
     exportSchema = false
 )
 abstract class CharacterDatabase : RoomDatabase() {

@@ -37,6 +37,7 @@ class CharacterRemoteDataSource @Inject constructor(
         name: String? = null,
         status: String? = null,
         species: String? = null,
+        type: String?,    // <--- Должен быть этот параметр
         gender: String? = null
     ): NetworkResult<CharactersResponse> {
         return try {
@@ -45,7 +46,14 @@ class CharacterRemoteDataSource @Inject constructor(
             // Выполняем запрос к API. Если он успешен, возвращаем NetworkResult.Success.
             // Если возникнет ошибка HTTP или сети, Retrofit бросит исключение,
             // которое будет поймано в соответствующих блоках catch.
-            val response = api.getCharacters(page, name, status, species, gender)
+            val response = api.getCharacters( // Ваш Retrofit сервис
+                page = page,
+                name = name,
+                status = status,
+                species = species,
+                type = type,    // <--- Передаем в @Query("type")
+                gender = gender // <--- Передаем в @Query("gender")
+            )
             Log.d(TAG, "API call successful for page $page.")
             NetworkResult.Success(response)
 

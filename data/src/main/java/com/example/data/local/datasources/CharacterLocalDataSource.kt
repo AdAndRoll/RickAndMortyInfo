@@ -5,6 +5,7 @@ import com.example.data.local.dao.CharacterDao
 import com.example.data.local.dao.RemoteKeyDao
 import com.example.data.local.entity.CharacterEntity
 import com.example.data.local.entity.RemoteKeyEntity
+import com.example.domain.model.CharacterFilter
 import javax.inject.Inject
 
 class CharacterLocalDataSource @Inject constructor(
@@ -15,8 +16,14 @@ class CharacterLocalDataSource @Inject constructor(
         characterDao.insertCharacters(characters)
     }
 
-    fun getAllCharacters(): PagingSource<Int, CharacterEntity> {
-        return characterDao.getAllCharacters()
+    fun getCharactersPagingSource(filter: CharacterFilter): PagingSource<Int, CharacterEntity> {
+        return characterDao.getCharactersPagingSource(
+            name = filter.name.takeIf { it?.isNotBlank() == true },
+            status = filter.status.takeIf { it?.isNotBlank() == true },
+            species = filter.species.takeIf { it?.isNotBlank() == true },
+            gender = filter.gender.takeIf { it?.isNotBlank() == true },
+            type = filter.type.takeIf { it?.isNotBlank() ==true }
+        )
     }
 
     suspend fun clearAllCharacters() {

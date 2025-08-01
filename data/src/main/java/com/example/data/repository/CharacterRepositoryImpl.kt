@@ -53,7 +53,7 @@ class CharacterRepositoryImpl @Inject constructor(
                 // !!! ИЗМЕНЕНИЕ: Убедимся, что PagingSource берется из DAO.
                 // Это гарантирует, что Paging Library работает напрямую
                 // с изменяемыми данными из Room.
-                characterLocalDataSource.getAllCharacters()
+                characterLocalDataSource.getCharactersPagingSource(filter)
             }
         ).flow.map { pagingData ->
             pagingData.map { it.toCharacter() }

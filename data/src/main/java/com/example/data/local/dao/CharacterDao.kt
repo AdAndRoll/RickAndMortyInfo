@@ -20,6 +20,20 @@ interface CharacterDao {
      *
      * @param characters Список [CharacterEntity] для вставки.
      */
+    // В CharacterDao
+    @Query("SELECT * FROM characters WHERE " +
+            "(:name IS NULL OR LOWER(name) LIKE '%' || LOWER(:name) || '%') AND " + // Сравнение имени без учета регистра
+            "(:status IS NULL OR LOWER(status) = LOWER(:status)) AND " +            // Сравнение статуса без учета регистра
+            "(:species IS NULL OR LOWER(species) LIKE '%' || LOWER(:species) || '%') AND " + // Сравнение вида без учета регистра
+            "(:type IS NULL OR LOWER(type) = LOWER(:type)) AND " +                  // Сравнение типа без учета регистра
+            "(:gender IS NULL OR LOWER(gender) = LOWER(:gender)) " +                // Сравнение пола без учета регистра
+            "ORDER BY id ASC")
+    fun getCharactersPagingSource(
+        name: String?, status: String?,
+        species: String?,
+        type: String?,
+        gender: String?
+    ): PagingSource<Int, CharacterEntity>
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCharacters(characters: List<CharacterEntity>)
 

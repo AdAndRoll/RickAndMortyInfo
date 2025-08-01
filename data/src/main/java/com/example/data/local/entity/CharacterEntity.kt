@@ -19,6 +19,7 @@ data class CharacterEntity(
     @PrimaryKey val id: Int,
     val name: String,
     val species: String,
+    val type: String?, // <--- ДОБАВЬТЕ ЭТО ПОЛЕ
     val status: String,
     val gender: String,
     val imageUrl: String
