@@ -39,7 +39,7 @@ class CharacterRepositoryImpl @Inject constructor(
     ): Flow<PagingData<RMCharacter>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 20,
+                pageSize = 30,
                 enablePlaceholders = false,
                 initialLoadSize = 20,
                 prefetchDistance = 20
