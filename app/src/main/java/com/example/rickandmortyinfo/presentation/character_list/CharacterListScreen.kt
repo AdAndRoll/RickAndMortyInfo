@@ -2,7 +2,6 @@ package com.example.rickandmortyinfo.presentation.character_list
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemKey
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterItem
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterListToolbar
 
@@ -40,93 +38,79 @@ fun CharacterListScreen(
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
+        // Отображаем полноэкранный индикатор загрузки только при первой загрузке
+        if (characters.loadState.refresh is LoadState.Loading) {
+            Box(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentAlignment = Alignment.Center
             ) {
-                items(
-                    count = characters.itemCount,
-                    key = characters.itemKey { it.id }
-                ) { index ->
-                    val character = characters[index]
-                    if (character != null) {
-                        CharacterItem(
-                            name = character.name ?: "Unknown",
-                            species = character.species ?: "Unknown",
-                            status = character.status ?: "Unknown",
-                            gender = character.gender ?: "Unknown",
-                            imageUrl = character.imageUrl ?: ""
-                        )
+                CircularProgressIndicator()
+            }
+        } else {
+            // Как только первая порция данных загружена, показываем список
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(characters.itemCount) { index ->
+                        val character = characters[index]
+                        if (character != null) {
+                            CharacterItem(
+                                name = character.name ?: "Unknown",
+                                species = character.species ?: "Unknown",
+                                status = character.status ?: "Unknown",
+                                gender = character.gender ?: "Unknown",
+                                imageUrl = character.imageUrl ?: ""
+                            )
+                        }
                     }
-                }
 
-                characters.apply {
-                    when {
-                        loadState.refresh is LoadState.Loading -> {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
+                    // Обработка состояния загрузки дополнительных страниц (пагинация)
+                    characters.apply {
+                        when (loadState.append) {
+                            is LoadState.Loading -> {
+                                item(span = { GridItemSpan(maxLineSpan) }) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
                                 }
                             }
-                        }
-                        loadState.append is LoadState.Loading -> {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
-                                }
-                            }
-                        }
-                        loadState.refresh is LoadState.Error -> {
-                            val error = loadState.refresh as LoadState.Error
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
+                            is LoadState.Error -> {
+                                val error = loadState.append as LoadState.Error
+                                item(span = { GridItemSpan(maxLineSpan) }) {
                                     Text(
-                                        text = "Error: ${error.error.localizedMessage ?: "Unknown error"}",
-                                        modifier = Modifier.padding(16.dp)
+                                        text = "Ошибка загрузки: ${error.error.localizedMessage ?: "Неизвестная ошибка"}",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
                                     )
                                 }
                             }
-                        }
-                        loadState.append is LoadState.Error -> {
-                            val error = loadState.append as LoadState.Error
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Text(
-                                    text = "Error loading more: ${error.error.localizedMessage ?: "Unknown error"}",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                )
-                            }
+                            else -> {}
                         }
                     }
                 }
-            }
 
-            if (characters.loadState.refresh is LoadState.NotLoading && characters.itemCount == 0) {
-                Text(
-                    text = "No characters found.",
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                // Сообщение, если персонажей не найдено
+                if (characters.loadState.refresh is LoadState.NotLoading && characters.itemCount == 0) {
+                    Text(
+                        text = "Персонажи не найдены.",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
         }
     }

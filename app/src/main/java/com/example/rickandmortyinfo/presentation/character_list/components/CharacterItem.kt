@@ -13,10 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.rickandmortyinfo.R
 
 @Composable
@@ -40,7 +43,14 @@ fun CharacterItem(
             modifier = Modifier.padding(8.dp)
         ) {
             AsyncImage(
-                model = imageUrl,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true) // Плавное появление
+                    // .placeholder(R.drawable.placeholder_image) // Ваш плейсхолдер
+                    // .error(R.drawable.error_image) // Изображение при ошибке
+                    .diskCacheKey(imageUrl) // Явное указание ключа для дискового кэша (обычно Coil делает это сам)
+                    .memoryCacheKey(imageUrl) // Явное указание ключа для кэша в памяти
+                    .build(),
                 contentDescription = "Изображение персонажа $name",
                 modifier = Modifier
                     .fillMaxWidth()

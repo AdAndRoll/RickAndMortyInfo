@@ -1,15 +1,15 @@
-// app/src/main/java/com/example/data/remote/mediator/CharacterRemoteMediator.kt
 package com.example.data.remote.mediator
 
+import android.util.Log
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
-import androidx.room.withTransaction // Важно для атомарных операций
+import androidx.room.withTransaction
 import com.example.data.local.database.CharacterDatabase
 import com.example.data.local.datasources.CharacterLocalDataSource
 import com.example.data.local.entity.CharacterEntity
-import com.example.data.local.entity.RemoteKeyEntity // Убедитесь, что это НОВАЯ RemoteKeyEntity
+import com.example.data.local.entity.RemoteKeyEntity
 import com.example.data.mappers.toCharacterEntity
 import com.example.data.remote.datasources.CharacterRemoteDataSource
 import com.example.data.utils.NetworkResult
@@ -26,31 +26,33 @@ class CharacterRemoteMediator(
     private val filter: CharacterFilter
 ) : RemoteMediator<Int, CharacterEntity>() {
 
-    private val CACHE_TIMEOUT = TimeUnit.MINUTES.toMillis(30) // 30 минут для свежести кэша
+    private val CACHE_TIMEOUT = TimeUnit.MINUTES.toMillis(30)
+    private val TAG = "CharacterRemoteMediator"
 
     /**
-     * Определяет, следует ли запускать полный REFRESH данных из сети.
-     * Вызывается один раз при инициализации Paging.
+     * Эта функция теперь проверяет не только время, но и целостность данных.
+     * Если есть RemoteKey, но нет персонажей, мы считаем кэш некорректным
+     * и принудительно делаем полный REFRESH.
      */
     override suspend fun initialize(): InitializeAction {
-        // Получаем время последнего обновления из персистентного хранилища (RemoteKeyEntity)
         val lastUpdateTime = characterLocalDataSource.getRemoteKey()?.createdAt ?: 0L
+        val characterCount = characterLocalDataSource.getAllCharactersCount()
         val now = System.currentTimeMillis()
+        val isCacheOutdated = now - lastUpdateTime >= CACHE_TIMEOUT
+        val isCacheInconsistent = lastUpdateTime > 0 && characterCount == 0
 
-        return if (now - lastUpdateTime >= CACHE_TIMEOUT) {
-            // Кэш устарел, или его нет: требуется полный refresh.
-            // Paging Library вызовет load(LoadType.REFRESH, ...)
+        Log.d(TAG, "Checking cache integrity. Last update: $lastUpdateTime, character count: $characterCount")
+        Log.d(TAG, "Is cache outdated: $isCacheOutdated, Is cache inconsistent: $isCacheInconsistent")
+
+        return if (isCacheOutdated || isCacheInconsistent) {
+            Log.d(TAG, "Cache is outdated or inconsistent. Launching initial REFRESH.")
             InitializeAction.LAUNCH_INITIAL_REFRESH
         } else {
-            // Кэш свежий: можно использовать данные из БД.
-            // Paging Library будет ждать, пока потребуется LoadType.APPEND/PREPEND.
+            Log.d(TAG, "Cache is fresh and consistent. Skipping initial REFRESH.")
             InitializeAction.SKIP_INITIAL_REFRESH
         }
     }
 
-    /**
-     * Основной метод, который вызывается Paging 3 для загрузки данных из сети и их кэширования.
-     */
     override suspend fun load(
         loadType: LoadType,
         state: PagingState<Int, CharacterEntity>
@@ -60,30 +62,29 @@ class CharacterRemoteMediator(
 
             when (loadType) {
                 LoadType.REFRESH -> {
-                    // При REFRESH всегда начинаем с первой страницы (1).
-                    // Это важно для сброса состояния пагинации, например, при применении нового фильтра.
+                    Log.d(TAG, "LoadType: REFRESH. Starting from page 1.")
                     currentPage = 1
                 }
                 LoadType.PREPEND -> {
-                    // API Rick and Morty не поддерживает эффективную прокрутку вверх (prev_page).
-                    // Просто сообщаем, что предыдущих данных нет.
+                    Log.d(TAG, "LoadType: PREPEND. End of pagination reached.")
                     return MediatorResult.Success(endOfPaginationReached = true)
                 }
                 LoadType.APPEND -> {
-                    // Для APPEND получаем 'nextKey' из нашей единственной RemoteKeyEntity.
                     val remoteKey = characterLocalDataSource.getRemoteKey()
                     val nextKey = remoteKey?.nextKey
 
-                    // Если nextKey null, значит, мы достигли конца пагинации на предыдущем запросе,
-                    // либо это первый запуск, и REFRESH не был запущен (из-за SKIP_INITIAL_REFRESH).
+                    Log.d(TAG, "LoadType: APPEND. Next key from DB: $nextKey")
+
                     if (nextKey == null) {
+                        Log.d(TAG, "nextKey is null. End of pagination reached.")
                         return MediatorResult.Success(endOfPaginationReached = true)
+                    } else {
+                        currentPage = nextKey
                     }
-                    currentPage = nextKey
                 }
             }
 
-            // Выполняем сетевой запрос к API
+            Log.d(TAG, "Requesting characters for page: $currentPage")
             val apiResult = characterRemoteDataSource.getCharacters(
                 page = currentPage,
                 name = filter.name,
@@ -91,54 +92,48 @@ class CharacterRemoteMediator(
                 species = filter.species,
                 gender = filter.gender
             )
+            Log.d(TAG, "API request for page $currentPage finished.")
 
-            // Обрабатываем результат сетевого запроса
             val endOfPaginationReached: Boolean
             when (apiResult) {
                 is NetworkResult.Success -> {
                     val characters = apiResult.data.results
-                    // Определяем, достигнут ли конец пагинации по полю info.next
                     endOfPaginationReached = apiResult.data.info.next == null
 
                     characterDatabase.withTransaction {
-                        // При LoadType.REFRESH:
-                        // 1. Очищаем все существующие персонажи в локальной БД.
-                        // 2. Очищаем единственную запись RemoteKeyEntity.
-                        // Это гарантирует, что мы начинаем с чистого листа.
                         if (loadType == LoadType.REFRESH) {
                             characterLocalDataSource.clearAllCharacters()
                             characterLocalDataSource.clearAllRemoteKeys()
+                            Log.d(TAG, "DB cleared for REFRESH.")
                         }
 
-                        // Вставляем или обновляем единственную RemoteKeyEntity для текущего состояния пагинации.
                         val newRemoteKey = RemoteKeyEntity(
-                            id = 0, // Всегда используем ID 0
+                            id = 0,
                             prevKey = if (currentPage == 1) null else currentPage - 1,
                             nextKey = if (endOfPaginationReached) null else currentPage + 1,
-                            createdAt = System.currentTimeMillis() // Обновляем время кэширования
+                            createdAt = System.currentTimeMillis()
                         )
                         characterLocalDataSource.insertRemoteKey(newRemoteKey)
-
-                        // Вставляем полученных персонажей в локальную БД.
                         characterLocalDataSource.insertCharacters(characters.map { it.toCharacterEntity() })
+                        Log.d(TAG, "${characters.size} characters inserted into DB.")
                     }
+                    Log.d(TAG, "Returning success. End of pagination: $endOfPaginationReached")
                 }
                 is NetworkResult.Error -> {
-                    // Возвращаем ошибку, которая будет передана Paging 3.
+                    Log.e(TAG, "API request failed with error: ${apiResult.exception.localizedMessage}")
                     return MediatorResult.Error(apiResult.exception)
                 }
             }
-            // Возвращаем Success, указывая, достигнут ли конец пагинации.
             MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
 
         } catch (e: IOException) {
-            // Ошибки сети (например, нет интернета)
+            Log.e(TAG, "Network or I/O error occurred: ${e.localizedMessage}")
             MediatorResult.Error(e)
         } catch (e: HttpException) {
-            // HTTP ошибки (например, 404, 500)
+            Log.e(TAG, "HTTP error occurred: ${e.code()} - ${e.localizedMessage}")
             MediatorResult.Error(e)
         } catch (e: Exception) {
-            // Любые другие неожиданные исключения
+            Log.e(TAG, "An unexpected error occurred: ${e.localizedMessage}", e)
             MediatorResult.Error(e)
         }
     }

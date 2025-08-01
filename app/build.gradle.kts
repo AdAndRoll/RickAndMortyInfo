@@ -65,6 +65,8 @@ dependencies {
 
     // Coil (изображения)
     implementation(libs.coil.compose)
+    implementation("io.coil-kt:coil:2.7.0")
+    implementation("io.coil-kt:coil-gif:2.7.0")
 
     // Retrofit + Moshi
     implementation(libs.retrofit)
@@ -75,6 +77,7 @@ dependencies {
 
     // Room
     implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.benchmark.common)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 

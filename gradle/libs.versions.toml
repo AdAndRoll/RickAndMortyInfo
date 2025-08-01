@@ -25,6 +25,7 @@ pagingCompose = "3.3.6"
 retrofit = "3.0.0"
 roomRuntime = "2.7.2"
 pagingCommonJvm = "3.3.6"
+benchmarkCommon = "1.4.0"
 
 [libraries]
 accompanist-swiperefresh = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanistSwiperefresh" }
@@ -65,6 +66,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshiKotlin" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 androidx-paging-common-jvm = { group = "androidx.paging", name = "paging-common-jvm", version.ref = "pagingCommonJvm" }
+androidx-benchmark-common = { group = "androidx.benchmark", name = "benchmark-common", version.ref = "benchmarkCommon" }
 
 
 [plugins]

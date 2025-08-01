@@ -37,4 +37,13 @@ interface CharacterDao {
      */
     @Query("DELETE FROM characters")
     suspend fun clearAllCharacters()
+
+    /**
+     * Возвращает общее количество персонажей в базе данных.
+     * Этот метод необходим для проверки, пуста ли база данных.
+     *
+     * @return Количество записей в таблице.
+     */
+    @Query("SELECT COUNT(*) FROM characters")
+    suspend fun getAllCharactersCount(): Int
 }
