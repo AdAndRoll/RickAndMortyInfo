@@ -1,5 +1,6 @@
 package com.example.rickandmortyinfo.presentation.character_list
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -25,6 +26,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterListScreen(
+    // Добавляем параметр для обработки клика на элемент списка
+    onCharacterClick: (Int) -> Unit,
     viewModel: CharactersViewModel = hiltViewModel()
 ) {
     val characters = viewModel.characters.collectAsLazyPagingItems()
@@ -37,7 +40,6 @@ fun CharacterListScreen(
             CharacterListToolbar(
                 title = "Rick and Morty Characters",
                 onFilterClick = {
-                    // Открываем нижний модальный лист при нажатии на кнопку фильтра
                     showFilterSheet = true
                 }
             )
@@ -48,7 +50,6 @@ fun CharacterListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Отображаем полноэкранный индикатор загрузки только при первой загрузке (REFRESH)
             if (characters.loadState.refresh is LoadState.Loading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -57,7 +58,6 @@ fun CharacterListScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                // Как только первая порция данных загружена, показываем список
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxSize(),
@@ -73,12 +73,17 @@ fun CharacterListScreen(
                                 species = character.species ?: "Unknown",
                                 status = character.status ?: "Unknown",
                                 gender = character.gender ?: "Unknown",
-                                imageUrl = character.imageUrl ?: ""
+                                imageUrl = character.imageUrl ?: "",
+                                // Добавляем модификатор .clickable для навигации
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onCharacterClick(character.id)
+                                    }
                             )
                         }
                     }
 
-                    // Обработка состояния загрузки дополнительных страниц (APPEND)
                     characters.apply {
                         when (loadState.append) {
                             is LoadState.Loading -> {
@@ -109,7 +114,6 @@ fun CharacterListScreen(
                     }
                 }
 
-                // Сообщение, если персонажей не найдено
                 if (characters.loadState.refresh is LoadState.NotLoading && characters.itemCount == 0) {
                     Text(
                         text = "Персонажи не найдены.",
@@ -120,7 +124,6 @@ fun CharacterListScreen(
         }
     }
 
-    // Отображаем экран фильтра как ModalBottomSheet
     if (showFilterSheet) {
         ModalBottomSheet(
             onDismissRequest = {
@@ -132,7 +135,6 @@ fun CharacterListScreen(
                 onApplyFilter = { newFilter ->
                     viewModel.onFilterApplied(newFilter)
                     coroutineScope.launch {
-                        // !!! Добавлена явная команда на обновление списка после применения фильтра
                         characters.refresh()
                         sheetState.hide()
                         showFilterSheet = false

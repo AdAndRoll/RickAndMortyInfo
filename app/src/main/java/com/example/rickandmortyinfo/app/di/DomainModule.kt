@@ -1,6 +1,7 @@
 package com.example.rickandmortyinfo.app.di
 
 import com.example.domain.repository.CharacterRepository
+import com.example.domain.usecases.GetCharacterDetailsUseCase
 import com.example.domain.usecases.GetCharactersUseCase
 import dagger.Module
 import dagger.Provides
@@ -26,5 +27,19 @@ object DomainModule {
         repository: CharacterRepository
     ): GetCharactersUseCase {
         return GetCharactersUseCase(repository)
+    }
+
+    /**
+     * Предоставляет [GetCharacterDetailsUseCase].
+     * Hilt автоматически инжектирует CharacterRepository (или другие зависимости UseCase),
+     * который будет предоставлен из DataModule (или другого соответствующего модуля).
+     */
+    @Provides
+    @Singleton // Или @ViewModelScoped, если установлен в ViewModelComponent
+    fun provideGetCharacterDetailsUseCase(
+        repository: CharacterRepository // Предполагается, что он также зависит от CharacterRepository
+        // Если у него другие зависимости, укажите их здесь
+    ): GetCharacterDetailsUseCase {
+        return GetCharacterDetailsUseCase(repository) // Создаем экземпляр
     }
 }

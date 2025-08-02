@@ -2,6 +2,7 @@ package com.example.data.remote.datasources
 
 import android.util.Log
 import com.example.data.remote.api.RickAndMortyApi
+import com.example.data.remote.dto.CharacterDto
 import com.example.data.remote.dto.CharactersResponse
 import com.example.data.utils.NetworkResult
 import javax.inject.Inject
@@ -68,6 +69,30 @@ class CharacterRemoteDataSource @Inject constructor(
         } catch (e: Exception) {
             // Любые другие неожиданные исключения (например, ошибка парсинга JSON)
             Log.e(TAG, "An unexpected error occurred: ${e.localizedMessage}", e)
+            NetworkResult.Error(e)
+        }
+    }
+
+    /**
+     * Получает полную информацию об одном персонаже по его ID.
+     *
+     * @param characterId ID персонажа, информацию о котором нужно получить.
+     * @return [NetworkResult] с [CharacterDto] в случае успеха, или [Throwable] в случае ошибки.
+     */
+    suspend fun getCharacterDetails(characterId: Int): NetworkResult<CharacterDto> {
+        return try {
+            Log.d(TAG, "Making API call for character details with ID: $characterId")
+            val response = api.getCharacterById(characterId)
+            Log.d(TAG, "API call successful for character ID: $characterId.")
+            NetworkResult.Success(response)
+        } catch (e: IOException) {
+            Log.e(TAG, "Network or I/O error occurred fetching details for ID $characterId: ${e.localizedMessage}")
+            NetworkResult.Error(e)
+        } catch (e: HttpException) {
+            Log.e(TAG, "HTTP error occurred fetching details for ID $characterId: ${e.code()} - ${e.localizedMessage}")
+            NetworkResult.Error(e)
+        } catch (e: Exception) {
+            Log.e(TAG, "An unexpected error occurred fetching details for ID $characterId: ${e.localizedMessage}", e)
             NetworkResult.Error(e)
         }
     }

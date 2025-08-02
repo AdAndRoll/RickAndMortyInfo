@@ -2,7 +2,9 @@ package com.example.data.mappers
 
 import com.example.data.local.entity.CharacterEntity
 import com.example.data.remote.dto.CharacterDto
-import com.example.domain.model.RMCharacter // Импорт доменной модели
+import com.example.domain.model.RMCharacter
+import com.example.domain.model.RMCharacterDetailed
+import com.example.domain.model.LocationRM
 
 /**
  * Маппер для преобразования DTO и Entity моделей в доменные модели и обратно.
@@ -34,6 +36,7 @@ fun CharacterEntity.toCharacter(): RMCharacter {
         id = this.id,
         name = this.name,
         species = this.species,
+        type = this.type,
         status = this.status,
         gender = this.gender,
         imageUrl = this.imageUrl
@@ -43,19 +46,34 @@ fun CharacterEntity.toCharacter(): RMCharacter {
 /**
  * Преобразует [CharacterDto] (модель из сети) в [RMCharacter] (доменная модель).
  * Используется, если данные напрямую из сети нужно передать в доменный слой
- * (например, если нет необходимости их кэшировать или для детальной информации,
- * которая не хранится в сокращенном CharacterEntity).
+ * (например, для детальной информации, которая не кэшируется).
  *
- * Хотя для списка мы всегда будем работать через Room, эта функция может быть полезна
- * для других сценариев или для прямого использования в репозитории для некоторых операций.
+ * Я переименовал эту функцию в `toCharacter()`, чтобы сделать ее более
+ * единообразной с маппером для `CharacterEntity`.
  */
-fun CharacterDto.toCharacterDomain(): RMCharacter {
+fun CharacterDto.toCharacter(): RMCharacter {
     return RMCharacter(
         id = this.id,
         name = this.name,
         species = this.species,
+        type = this.type,
         status = this.status,
         gender = this.gender,
         imageUrl = this.image
+    )
+}
+
+/**
+ * Расширяющая функция для преобразования CharacterDto в RMCharacterDetailed.
+ * Используется для получения полной информации о персонаже с детального экрана.
+ */
+fun CharacterDto.toCharacterDetailed(): RMCharacterDetailed {
+    // Используем уже существующий маппер для создания базового объекта
+    val basicCharacter = this.toCharacter()
+    return RMCharacterDetailed(
+        character = basicCharacter,
+        origin = LocationRM(origin.name, origin.url),
+        location = LocationRM(location.name, location.url),
+        episode = episode
     )
 }

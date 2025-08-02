@@ -8,11 +8,15 @@ import androidx.paging.map
 import com.example.data.local.database.CharacterDatabase
 import com.example.data.local.datasources.CharacterLocalDataSource
 import com.example.data.mappers.toCharacter
+import com.example.data.mappers.toCharacterDetailed
 import com.example.data.remote.datasources.CharacterRemoteDataSource
 import com.example.data.remote.mediator.CharacterRemoteMediator
+import com.example.data.utils.NetworkResult
 import com.example.domain.model.RMCharacter
 import com.example.domain.model.CharacterFilter
+import com.example.domain.model.RMCharacterDetailed
 import com.example.domain.repository.CharacterRepository
+import com.example.domain.utils.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -64,4 +68,20 @@ class CharacterRepositoryImpl @Inject constructor(
         characterLocalDataSource.clearAllCharacters()
         characterLocalDataSource.clearAllRemoteKeys()
     }
+
+
+    override suspend fun getCharacterDetails(characterId: Int): Result<RMCharacterDetailed> {
+        // Получаем данные из удаленного источника
+        return when (val result = characterRemoteDataSource.getCharacterDetails(characterId)) {
+            // Если запрос успешен, преобразуем DTO в доменную модель и оборачиваем в доменный Result
+            is NetworkResult.Success -> {
+                Result.Success(result.data.toCharacterDetailed())
+            }
+            // Если произошла ошибка, оборачиваем исключение в доменный Result
+            is NetworkResult.Error -> {
+                Result.Error(result.exception)
+            }
+        }
+    }
+
 }

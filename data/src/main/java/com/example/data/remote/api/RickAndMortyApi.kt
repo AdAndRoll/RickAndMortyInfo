@@ -3,6 +3,7 @@ package com.example.data.remote.api
 import com.example.data.remote.dto.CharactersResponse
 import com.example.data.remote.dto.CharacterDto
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface RickAndMortyApi {
@@ -25,6 +26,16 @@ interface RickAndMortyApi {
         @Query("status") status: String? = null,
         @Query("species") species: String? = null,
         @Query("type") type: String? = null,       // Этот параметр для "типа", а не "пола"
-        @Query("gender") gender: String? = null    // <--- Вот этот параметр для "пола"
+        @Query("gender") gender: String? = null,
+        // <--- Вот этот параметр для "пола"
     ): CharactersResponse // Замените на вашу модель ответа
+
+    /**
+     * Получает полную информацию об одном персонаже по его ID.
+     *
+     * @param id ID персонажа.
+     * @return Объект [CharacterDto] с полной информацией о персонаже.
+     */
+    @GET("character/{id}")
+    suspend fun getCharacterById(@Path("id") id: Int): CharacterDto
 }
