@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,7 +49,8 @@ import com.example.rickandmortyinfo.presentation.character_detail.components.Det
  * Компонуемая функция для экрана с детальной информацией о персонаже.
  *
  * @param characterId ID персонажа, который нужно отобразить.
- * @param onBackClick Функция, которая будет вызвана при нажатии кнопки "назад".
+ * @param onBackClick Функция, которая будет вызвана при нажатии кнопки "назад" (стрелка).
+ * @param onCloseClick Функция, которая будет вызвана при нажатии кнопки "закрыть" (крестик).
  * @param onLocationClick Функция, которая будет вызвана при нажатии на локацию.
  * @param viewModel ViewModel для управления состоянием экрана, предоставляемый Hilt.
  */
@@ -57,6 +59,7 @@ import com.example.rickandmortyinfo.presentation.character_detail.components.Det
 fun CharacterDetailScreen(
     characterId: Int,
     onBackClick: () -> Unit,
+    onCloseClick: () -> Unit,
     onLocationClick: (Int) -> Unit, // Новый параметр для навигации по локациям
     viewModel: CharacterDetailViewModel = hiltViewModel()
 ) {
@@ -81,6 +84,15 @@ fun CharacterDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Кнопка назад"
+                        )
+                    }
+                },
+                // Кнопка "закрыть" справа
+                actions = {
+                    IconButton(onClick = onCloseClick) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Кнопка закрыть"
                         )
                     }
                 }

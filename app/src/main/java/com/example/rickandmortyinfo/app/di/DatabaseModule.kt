@@ -52,7 +52,7 @@ object DatabaseModule {
             "rick_and_morty_db"
         )
             .addTypeConverter(CharacterTypeConverters(gson))
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration(true)
             .build()
     }
 

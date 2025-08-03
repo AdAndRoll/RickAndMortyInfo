@@ -8,7 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.presentation.screens.CharacterDetailScreen
 import com.example.rickandmortyinfo.presentation.character_list.CharacterListScreen
-import com.example.rickandmortyinfo.presentation.location_detail.LocationDetailScreen // Импортируем новый экран
+import com.example.rickandmortyinfo.presentation.location_detail.LocationDetailScreen
 
 @Composable
 fun RickAndMortyNavHost() {
@@ -35,11 +35,15 @@ fun RickAndMortyNavHost() {
             val characterId = backStackEntry.arguments?.getInt("characterId") ?: -1
             CharacterDetailScreen(
                 characterId = characterId,
+                // Стрелка "назад" просто возвращает на предыдущий экран
                 onBackClick = {
                     navController.popBackStack()
                 },
+                // Крестик "закрыть" возвращает на экран со списком персонажей
+                onCloseClick = {
+                    navController.popBackStack("character_list", false)
+                },
                 onLocationClick = { locationId ->
-                    // Навигация на экран деталей локации при клике на локацию
                     navController.navigate("location_detail/$locationId")
                 }
             )
@@ -53,11 +57,15 @@ fun RickAndMortyNavHost() {
             val locationId = backStackEntry.arguments?.getInt("locationId") ?: -1
             LocationDetailScreen(
                 locationId = locationId,
+                // Крестик "закрыть" возвращает на экран со списком персонажей
+                onCloseClick = {
+                    navController.popBackStack("character_list", false)
+                },
+                // Стрелка "назад" возвращает на предыдущий экран (детали персонажа)
                 onBackClick = {
                     navController.popBackStack()
                 },
                 onCharacterClick = { characterId ->
-                    // Навигация обратно на экран деталей персонажа
                     navController.navigate("character_detail/$characterId")
                 }
             )

@@ -3,7 +3,6 @@ package com.example.rickandmortyinfo.presentation.location_detail
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,7 +38,10 @@ import com.example.rickandmortyinfo.presentation.location_detail.components.Deta
  * Компонуемая функция для экрана с детальной информацией о локации.
  *
  * @param locationId ID локации, которую нужно отобразить.
- * @param onBackClick Функция, которая будет вызвана при нажатии кнопки "назад".
+ * @param onBackClick Функция, которая будет вызвана при нажатии кнопки "закрыть" (крестик)
+ * для возврата к списку персонажей.
+ * @param onArrowBackClick Функция, которая будет вызвана при нажатии кнопки "назад" (стрелка)
+ * для возврата на предыдущий экран в стеке.
  * @param onCharacterClick Функция, которая будет вызвана при нажатии на жителя.
  * @param viewModel ViewModel для управления состоянием экрана, предоставляемый Hilt.
  */
@@ -47,15 +50,14 @@ import com.example.rickandmortyinfo.presentation.location_detail.components.Deta
 fun LocationDetailScreen(
     locationId: Int,
     onBackClick: () -> Unit,
+    onCloseClick: () -> Unit,
     onCharacterClick: (Int) -> Unit,
     viewModel: LocationDetailViewModel = hiltViewModel()
 ) {
-    // Запускаем загрузку данных, когда компонент впервые появляется на экране.
     LaunchedEffect(key1 = locationId) {
         viewModel.loadLocationDetails(locationId)
     }
 
-    // Собираем состояние из ViewModel.
     val state by viewModel.locationDetailState.collectAsState()
 
     Scaffold(
@@ -67,11 +69,21 @@ fun LocationDetailScreen(
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
+                // Кнопка "назад" слева
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Кнопка назад"
+                        )
+                    }
+                },
+                // Кнопка "закрыть" справа
+                actions = {
+                    IconButton(onClick = onCloseClick) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Кнопка закрыть"
                         )
                     }
                 }
@@ -112,7 +124,6 @@ fun LocationDetailScreen(
                     item { DetailTextLocation(label = "Тип", value = location.type) }
                     item { DetailTextLocation(label = "Измерение", value = location.dimension) }
 
-                    // Теперь мы используем единственный список location.residents
                     if (location.residents.isNotEmpty()) {
                         item {
                             Text(
@@ -124,13 +135,11 @@ fun LocationDetailScreen(
                             )
                         }
 
-                        // Итерируем по новому списку объектов Resident
                         items(location.residents) { resident ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
-                                    // Теперь мы используем ID напрямую из объекта Resident
                                     .clickable {
                                         onCharacterClick(resident.id)
                                     }
@@ -141,7 +150,6 @@ fun LocationDetailScreen(
                                         .padding(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Отображаем имя жителя из объекта Resident
                                     Text(
                                         text = resident.name,
                                         style = MaterialTheme.typography.bodyMedium,
@@ -151,7 +159,6 @@ fun LocationDetailScreen(
                             }
                         }
                     }
-                    // Добавляем отступ в конце списка.
                     item { Box(modifier = Modifier.padding(bottom = 16.dp)) }
                 }
             }
