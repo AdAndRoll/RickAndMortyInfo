@@ -21,12 +21,13 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.rickandmortyinfo.presentation.character_filter.CharacterFilterScreen
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterItem
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterListToolbar
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterListScreen(
-    // Добавляем параметр для обработки клика на элемент списка
     onCharacterClick: (Int) -> Unit,
     viewModel: CharactersViewModel = hiltViewModel()
 ) {
@@ -34,6 +35,9 @@ fun CharacterListScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
+
+    val isRefreshing = characters.loadState.refresh is LoadState.Loading
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
 
     Scaffold(
         topBar = {
@@ -45,75 +49,74 @@ fun CharacterListScreen(
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+        // SwipeRefresh оборачивает весь контент экрана
+        SwipeRefresh(
+            state = swipeRefreshState,
+            onRefresh = { characters.refresh() },
+            modifier = Modifier.padding(paddingValues)
         ) {
-            if (characters.loadState.refresh is LoadState.Loading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(characters.itemCount) { index ->
-                        val character = characters[index]
-                        if (character != null) {
-                            CharacterItem(
-                                name = character.name ?: "Unknown",
-                                species = character.species ?: "Unknown",
-                                status = character.status ?: "Unknown",
-                                gender = character.gender ?: "Unknown",
-                                imageUrl = character.imageUrl ?: "",
-                                // Добавляем модификатор .clickable для навигации
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onCharacterClick(character.id)
-                                    }
-                            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Если идет начальная загрузка и список пуст, показываем индикатор по центру
+                if (isRefreshing && characters.itemCount == 0) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(characters.itemCount) { index ->
+                            val character = characters[index]
+                            if (character != null) {
+                                CharacterItem(
+                                    name = character.name ?: "Unknown",
+                                    species = character.species ?: "Unknown",
+                                    status = character.status ?: "Unknown",
+                                    gender = character.gender ?: "Unknown",
+                                    imageUrl = character.imageUrl ?: "",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onCharacterClick(character.id)
+                                        }
+                                )
+                            }
                         }
-                    }
 
-                    characters.apply {
-                        when (loadState.append) {
-                            is LoadState.Loading -> {
-                                item(span = { GridItemSpan(maxLineSpan) }) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator()
+                        characters.apply {
+                            when (loadState.append) {
+                                is LoadState.Loading -> {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
                                     }
                                 }
-                            }
-                            is LoadState.Error -> {
-                                val error = loadState.append as LoadState.Error
-                                item(span = { GridItemSpan(maxLineSpan) }) {
-                                    Text(
-                                        text = "Ошибка загрузки: ${error.error.localizedMessage ?: "Неизвестная ошибка"}",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp)
-                                    )
+                                is LoadState.Error -> {
+                                    val error = loadState.append as LoadState.Error
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Text(
+                                            text = "Ошибка загрузки: ${error.error.localizedMessage ?: "Неизвестная ошибка"}",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp)
+                                        )
+                                    }
                                 }
+                                else -> {}
                             }
-                            else -> {}
                         }
                     }
                 }
 
+                // Это сообщение об отсутствии персонажей теперь является прямым потомком Box
                 if (characters.loadState.refresh is LoadState.NotLoading && characters.itemCount == 0) {
                     Text(
                         text = "Персонажи не найдены.",
@@ -135,7 +138,6 @@ fun CharacterListScreen(
                 onApplyFilter = { newFilter ->
                     viewModel.onFilterApplied(newFilter)
                     coroutineScope.launch {
-                        characters.refresh()
                         sheetState.hide()
                         showFilterSheet = false
                     }
