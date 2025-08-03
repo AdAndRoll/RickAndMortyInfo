@@ -24,7 +24,7 @@ import com.example.data.local.entity.RemoteKeyEntity
  */
 @Database(
     entities = [CharacterEntity::class, RemoteKeyEntity::class, CharacterDetailsEntity::class, LocationDetailEntity::class ],
-    version =10,
+    version =11,
     exportSchema = false
 )
 @TypeConverters(CharacterTypeConverters::class)

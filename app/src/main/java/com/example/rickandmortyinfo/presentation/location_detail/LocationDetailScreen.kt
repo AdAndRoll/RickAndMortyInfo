@@ -34,7 +34,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.domain.model.LocationDetail
 import com.example.rickandmortyinfo.presentation.location_detail.components.DetailTextLocation
 
-
 /**
  * Компонуемая функция для экрана с детальной информацией о локации.
  *
@@ -48,7 +47,7 @@ import com.example.rickandmortyinfo.presentation.location_detail.components.Deta
 fun LocationDetailScreen(
     locationId: Int,
     onBackClick: () -> Unit,
-    onCharacterClick: (Int) -> Unit, // Новый параметр для навигации по персонажам
+    onCharacterClick: (Int) -> Unit,
     viewModel: LocationDetailViewModel = hiltViewModel()
 ) {
     // Запускаем загрузку данных, когда компонент впервые появляется на экране.
@@ -113,8 +112,8 @@ fun LocationDetailScreen(
                     item { DetailTextLocation(label = "Тип", value = location.type) }
                     item { DetailTextLocation(label = "Измерение", value = location.dimension) }
 
-                    // Теперь используем `residentNames` вместо `residents`
-                    if (location.residentNames.isNotEmpty()) {
+                    // Теперь мы используем единственный список location.residents
+                    if (location.residents.isNotEmpty()) {
                         item {
                             Text(
                                 text = "Жители",
@@ -125,15 +124,16 @@ fun LocationDetailScreen(
                             )
                         }
 
-                        // Отображаем имена жителей из нового списка
-                        items(location.residentNames) { residentName ->
+                        // Итерируем по новому списку объектов Resident
+                        items(location.residents) { resident ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
-                                // Убрана логика клика, так как у нас нет ID для навигации.
-                                // Вы можете добавить ее, если измените LocationDetail,
-                                // чтобы он включал ID.
+                                    // Теперь мы используем ID напрямую из объекта Resident
+                                    .clickable {
+                                        onCharacterClick(resident.id)
+                                    }
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -141,8 +141,9 @@ fun LocationDetailScreen(
                                         .padding(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    // Отображаем имя жителя из объекта Resident
                                     Text(
-                                        text = residentName,
+                                        text = resident.name,
                                         style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.weight(1f)
                                     )

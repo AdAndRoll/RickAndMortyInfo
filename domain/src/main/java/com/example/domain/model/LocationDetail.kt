@@ -6,11 +6,15 @@ package com.example.domain.model
  * Этот класс используется для экрана с деталями локации и содержит
  * всю необходимую информацию, загруженную из API, в отличие от
  * LocationRM, который является лишь ссылкой на локацию.
+ * этот класс содержит список объектов Resident,
+ * каждый из которых имеет как ID, так и имя, что позволяет
+ * корректную навигацию.
  */
 data class LocationDetail(
     val id: Int,
     val name: String,
     val type: String,
     val dimension: String,
-    val residentNames: List<String> // Теперь здесь хранятся имена, а не URL
+    // Изменен тип списка, чтобы хранить и ID, и имя
+    val residents: List<Resident>
 )

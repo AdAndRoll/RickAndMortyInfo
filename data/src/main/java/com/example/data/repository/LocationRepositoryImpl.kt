@@ -9,6 +9,7 @@ import com.example.data.remote.datasources.CharacterRemoteDataSource
 import com.example.data.remote.datasources.LocationRemoteDataSource
 import com.example.data.utils.NetworkResult
 import com.example.domain.model.LocationDetail
+import com.example.domain.model.Resident
 import com.example.domain.repository.LocationRepository
 import com.example.domain.utils.Result
 import kotlinx.coroutines.flow.Flow
@@ -53,9 +54,9 @@ class LocationRepositoryImpl @Inject constructor(
         val localDetails = locationLocalDataSource.getLocationDetails(locationId).firstOrNull()
 
         if (localDetails != null) {
-            // Если есть локальные данные, получаем имена резидентов и отправляем их.
-            val residentNames = getResidentNames(localDetails.residents)
-            emit(Result.Success(localDetails.toDomainModel(residentNames)))
+            // Если есть локальные данные, получаем объекты Resident и отправляем их.
+            val residents = getResidents(localDetails.residents)
+            emit(Result.Success(localDetails.toDomainModel(residents)))
         }
 
         // Выполняем сетевой запрос для обновления данных
@@ -80,10 +81,10 @@ class LocationRepositoryImpl @Inject constructor(
                     }
                 }
 
-                // После того, как первые 30 персонажей загружены, получаем их имена из кэша.
-                val initialResidentNames = getResidentNames(residentsToFetchInitially)
-                // Отправляем на экран локацию с частичным, но уже заполненным списком имён.
-                emit(Result.Success(detailsEntity.toDomainModel(initialResidentNames)))
+                // После того, как первые 30 персонажей загружены, получаем их данные из кэша.
+                val initialResidents = getResidents(residentsToFetchInitially)
+                // Отправляем на экран локацию с частичным, но уже заполненным списком Resident.
+                emit(Result.Success(detailsEntity.toDomainModel(initialResidents)))
 
                 // Запускаем фоновую загрузку оставшихся резидентов, не дожидаясь ее.
                 coroutineScope {
@@ -107,16 +108,20 @@ class LocationRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Вспомогательная функция для получения списка имён персонажей по их URL-адресам.
+     * Вспомогательная функция для получения списка объектов Resident (ID и имя)
+     * по их URL-адресам.
      *
      * @param residentUrls Список URL-адресов персонажей.
-     * @return Список имён персонажей.
+     * @return Список объектов [Resident].
      */
-    private suspend fun getResidentNames(residentUrls: List<String>): List<String> {
+    private suspend fun getResidents(residentUrls: List<String>): List<Resident> {
         return residentUrls.mapNotNull { url ->
             val characterId = url.substringAfterLast("/").toIntOrNull()
             if (characterId != null) {
-                characterDetailsDao.getCharacterDetailsById(characterId)?.name
+                // Ищем персонажа в локальной БД.
+                val characterEntity = characterDetailsDao.getCharacterDetailsById(characterId)
+                // Если найден, создаем объект Resident с его ID и именем.
+                characterEntity?.let { Resident(id = it.id, name = it.name) }
             } else {
                 null
             }

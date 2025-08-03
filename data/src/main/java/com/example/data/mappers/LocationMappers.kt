@@ -1,14 +1,16 @@
 package com.example.data.mappers
 
-import com.example.data.local.entity.CharacterDetailsEntity
 import com.example.data.local.entity.LocationDetailEntity
-import com.example.data.remote.dto.CharacterDto
 import com.example.data.remote.dto.LocationRemoteResponse
 import com.example.domain.model.LocationDetail
+import com.example.domain.model.Resident // Импортируем новый класс Resident
 
 /**
  * Расширение для преобразования сетевой модели [LocationRemoteResponse]
  * в сущность базы данных [LocationDetailEntity].
+ *
+ * Эта функция остается неизменной, так как сущность БД по-прежнему
+ * хранит только URL-адреса, а не детали жителей.
  *
  * @return Объект [LocationDetailEntity], готовый к сохранению в базе данных Room.
  */
@@ -28,16 +30,19 @@ fun LocationRemoteResponse.toEntity(): LocationDetailEntity {
  * Расширение для преобразования сущности базы данных [LocationDetailEntity]
  * в доменную модель [LocationDetail].
  *
- * @param residentNames Список имён резидентов.
+ * Теперь в качестве параметра принимается список готовых объектов [Resident],
+ * а не просто список имен. Это позволяет передать ID вместе с именем.
+ *
+ * @param residents Список объектов [Resident], содержащих ID и имя.
  * @return Объект [LocationDetail] для использования в UI.
  */
-fun LocationDetailEntity.toDomainModel(residentNames: List<String>): LocationDetail {
+fun LocationDetailEntity.toDomainModel(residents: List<Resident>): LocationDetail {
     return LocationDetail(
         id = this.id,
         name = this.name,
         type = this.type,
         dimension = this.dimension,
-        residentNames = residentNames // Передаем список имен
+        residents = residents // Передаем список объектов Resident
     )
 }
 
@@ -45,17 +50,18 @@ fun LocationDetailEntity.toDomainModel(residentNames: List<String>): LocationDet
  * Расширение для прямого преобразования сетевой модели [LocationRemoteResponse]
  * в доменную модель [LocationDetail].
  *
- * @param residentNames Список имён резидентов.
+ * Как и в случае с сущностью БД, теперь в качестве параметра принимается
+ * список готовых объектов [Resident].
+ *
+ * @param residents Список объектов [Resident], содержащих ID и имя.
  * @return Объект [LocationDetail] для использования в слоях UI и бизнес-логики.
  */
-fun LocationRemoteResponse.toDomainModel(residentNames: List<String>): LocationDetail {
+fun LocationRemoteResponse.toDomainModel(residents: List<Resident>): LocationDetail {
     return LocationDetail(
         id = this.id,
         name = this.name,
         type = this.type,
         dimension = this.dimension,
-        residentNames = residentNames
+        residents = residents
     )
 }
-
-
