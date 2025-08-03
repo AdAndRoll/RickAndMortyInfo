@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color // Добавили импорт Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
@@ -70,6 +71,8 @@ fun CharacterListScreen(
     )
 
     Scaffold(
+        // Изменили цвет контейнера на прозрачный
+        containerColor = Color.Transparent,
         topBar = {
             CharacterListToolbar(
                 title = "Rick and Morty Characters",

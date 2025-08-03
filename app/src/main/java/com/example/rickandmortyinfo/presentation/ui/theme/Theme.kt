@@ -32,22 +32,15 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+
 @Composable
 fun RickAndMortyInfoTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Мы игнорируем isSystemInDarkTheme, чтобы всегда использовать светлую тему
+    darkTheme: Boolean = false, // false, чтобы всегда использовать LightColorScheme
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // Выбираем только светлую цветовую схему
+    val colorScheme = LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,

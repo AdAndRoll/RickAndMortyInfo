@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -32,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -72,6 +75,8 @@ fun CharacterDetailScreen(
     val state by viewModel.characterDetailState.collectAsState()
 
     Scaffold(
+        // Делаем фон Scaffold прозрачным, чтобы видеть фоновое изображение
+        containerColor = Color.Transparent,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -95,7 +100,11 @@ fun CharacterDetailScreen(
                             contentDescription = "Кнопка закрыть"
                         )
                     }
-                }
+                },
+                // Делаем TopAppBar менее прозрачным
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                )
             )
         }
     ) { paddingValues ->
@@ -116,131 +125,140 @@ fun CharacterDetailScreen(
                 val origin = characterDetails.origin
                 val location = characterDetails.location
 
-                LazyColumn(
+                // Оборачиваем весь контент в полностью непрозрачную Card для лучшей читаемости
+                Card(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(horizontal = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(16.dp),
+                    // Используем полностью непрозрачный белый цвет для фона карточки
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    item {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                            AsyncImage(
-                                model = character.imageUrl,
-                                contentDescription = "Изображение ${character.name}",
-                                modifier = Modifier
-                                    .padding(top = 16.dp)
-                                    .size(200.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                            Text(
-                                text = character.name,
-                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 16.dp)
-                            )
-                        }
-                    }
-
-                    // Теперь эти элементы кликабельны и вызывают onFilterClick
-                    item {
-                        DetailText(
-                            label = "Статус",
-                            value = character.status,
-                            onClick = { onFilterClick("status", character.status) }
-                        )
-                    }
-                    item {
-                        DetailText(
-                            label = "Вид",
-                            value = character.species,
-                            onClick = { onFilterClick("species", character.species) }
-                        )
-                    }
-
-                    character.type?.let { type ->
-                        if (type.isNotBlank()) {
-                            item {
-                                DetailText(
-                                    label = "Тип",
-                                    value = type,
-                                    onClick = { onFilterClick("type", type) }
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                AsyncImage(
+                                    model = character.imageUrl,
+                                    contentDescription = "Изображение ${character.name}",
+                                    modifier = Modifier
+                                        .padding(top = 16.dp)
+                                        .size(200.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Text(
+                                    text = character.name,
+                                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(top = 16.dp)
                                 )
                             }
                         }
-                    }
 
-                    item {
-                        DetailText(
-                            label = "Пол",
-                            value = character.gender,
-                            onClick = { onFilterClick("gender", character.gender) }
-                        )
-                    }
-
-                    // Детали происхождения и последней локации
-                    item {
-                        DetailText(
-                            label = "Происхождение",
-                            value = origin.name,
-                            onClick = {
-                                if (origin.url.isNotBlank()) {
-                                    val locationId = origin.url.substringAfterLast("/").toIntOrNull()
-                                    if (locationId != null) onLocationClick(locationId)
-                                }
-                            }
-                        )
-                    }
-                    item {
-                        DetailText(
-                            label = "Последняя локация",
-                            value = location.name,
-                            onClick = {
-                                if (location.url.isNotBlank()) {
-                                    val locationId = location.url.substringAfterLast("/").toIntOrNull()
-                                    if (locationId != null) onLocationClick(locationId)
-                                }
-                            }
-                        )
-                    }
-
-                    if (characterDetails.episode.isNotEmpty()) {
+                        // Теперь эти элементы кликабельны и вызывают onFilterClick
                         item {
-                            Text(
-                                text = "Эпизоды",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 16.dp, bottom = 8.dp)
-                                    .padding(start = 0.dp)
+                            DetailText(
+                                label = "Статус",
+                                value = character.status,
+                                onClick = { onFilterClick("status", character.status) }
+                            )
+                        }
+                        item {
+                            DetailText(
+                                label = "Вид",
+                                value = character.species,
+                                onClick = { onFilterClick("species", character.species) }
                             )
                         }
 
-                        items(characterDetails.episode, key = { it }) { episodeUrl ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                            ) {
-                                val episodeNumber = episodeUrl.substringAfterLast("/")
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "Эпизод $episodeNumber",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.weight(1f)
+                        character.type?.let { type ->
+                            if (type.isNotBlank()) {
+                                item {
+                                    DetailText(
+                                        label = "Тип",
+                                        value = type,
+                                        onClick = { onFilterClick("type", type) }
                                     )
                                 }
                             }
                         }
+
+                        item {
+                            DetailText(
+                                label = "Пол",
+                                value = character.gender,
+                                onClick = { onFilterClick("gender", character.gender) }
+                            )
+                        }
+
+                        // Детали происхождения и последней локации
+                        item {
+                            DetailText(
+                                label = "Происхождение",
+                                value = origin.name,
+                                onClick = {
+                                    if (origin.url.isNotBlank()) {
+                                        val locationId = origin.url.substringAfterLast("/").toIntOrNull()
+                                        if (locationId != null) onLocationClick(locationId)
+                                    }
+                                }
+                            )
+                        }
+                        item {
+                            DetailText(
+                                label = "Последняя локация",
+                                value = location.name,
+                                onClick = {
+                                    if (location.url.isNotBlank()) {
+                                        val locationId = location.url.substringAfterLast("/").toIntOrNull()
+                                        if (locationId != null) onLocationClick(locationId)
+                                    }
+                                }
+                            )
+                        }
+
+                        if (characterDetails.episode.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "Эпизоды",
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp, bottom = 8.dp)
+                                        .padding(start = 0.dp)
+                                )
+                            }
+
+                            items(characterDetails.episode, key = { it }) { episodeUrl ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    val episodeNumber = episodeUrl.substringAfterLast("/")
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Эпизод $episodeNumber",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        item { Box(modifier = Modifier.padding(bottom = 16.dp)) }
                     }
-                    item { Box(modifier = Modifier.padding(bottom = 16.dp)) }
                 }
             }
             is CharacterDetailState.Error -> {
