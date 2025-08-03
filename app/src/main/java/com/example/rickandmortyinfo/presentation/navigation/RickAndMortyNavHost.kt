@@ -35,7 +35,12 @@ fun RickAndMortyNavHost() {
             // !!! КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ:
             // Извлекаем characterId из backStackEntry и передаем его в CharacterDetailScreen.
             val characterId = backStackEntry.arguments?.getInt("characterId") ?: -1
-            CharacterDetailScreen(characterId = characterId)
+            CharacterDetailScreen(
+                characterId = characterId,
+                onBackClick = {
+                    navController.popBackStack() // Navigate back
+                },
+            )
         }
     }
 }
