@@ -33,6 +33,7 @@ android {
     kotlinOptions {
         jvmTarget = "1.8" // JvmTarget 1.8 также требуется
     }
+
 }
 
 dependencies {
@@ -77,9 +78,24 @@ dependencies {
 
     // Logging Interceptor (Good for debugging network requests) - Optional but highly recommended
     implementation(libs.logging.interceptor)
+
+
+    // Тестовые зависимости, добавленные для RemoteMediator и репозитория
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
+    testImplementation("io.mockk:mockk:1.14.5")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("androidx.paging:paging-common-ktx:3.3.6")
+    testImplementation("androidx.paging:paging-testing:3.3.6")
+    testImplementation("androidx.room:room-testing:2.7.2")
+    testImplementation("androidx.test:core:1.7.0")
+    testImplementation(kotlin("test"))
 }
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform() // Включаем JUnit 5
 }

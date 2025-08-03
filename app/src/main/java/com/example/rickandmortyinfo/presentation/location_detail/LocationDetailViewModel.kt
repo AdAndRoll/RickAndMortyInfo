@@ -2,7 +2,6 @@ package com.example.rickandmortyinfo.presentation.location_detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.domain.model.LocationDetail
 import com.example.domain.usecases.GetLocationDetailsUseCase
 import com.example.domain.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel

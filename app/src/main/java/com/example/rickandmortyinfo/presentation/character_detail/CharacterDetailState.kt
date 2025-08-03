@@ -2,6 +2,7 @@ package com.example.rickandmortyinfo.presentation.character_detail
 
 import com.example.domain.model.RMCharacterDetailed
 
+
 /**
  * Запечатанный класс для представления различных состояний UI.
  * Это позволяет UI-слою реагировать на каждое состояние (загрузка, успех, ошибка).
