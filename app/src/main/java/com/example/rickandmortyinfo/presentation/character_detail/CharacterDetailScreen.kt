@@ -52,6 +52,7 @@ import com.example.rickandmortyinfo.presentation.character_detail.components.Det
  * @param onBackClick Функция, которая будет вызвана при нажатии кнопки "назад" (стрелка).
  * @param onCloseClick Функция, которая будет вызвана при нажатии кнопки "закрыть" (крестик).
  * @param onLocationClick Функция, которая будет вызвана при нажатии на локацию.
+ * @param onFilterClick Функция для навигации с фильтром.
  * @param viewModel ViewModel для управления состоянием экрана, предоставляемый Hilt.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,7 +61,8 @@ fun CharacterDetailScreen(
     characterId: Int,
     onBackClick: () -> Unit,
     onCloseClick: () -> Unit,
-    onLocationClick: (Int) -> Unit, // Новый параметр для навигации по локациям
+    onLocationClick: (Int) -> Unit,
+    onFilterClick: (String, String) -> Unit, // Новый параметр
     viewModel: CharacterDetailViewModel = hiltViewModel()
 ) {
     LaunchedEffect(key1 = characterId) {
@@ -69,7 +71,6 @@ fun CharacterDetailScreen(
 
     val state by viewModel.characterDetailState.collectAsState()
 
-    // Используем Scaffold для создания базовой структуры экрана с TopAppBar.
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -87,7 +88,6 @@ fun CharacterDetailScreen(
                         )
                     }
                 },
-                // Кнопка "закрыть" справа
                 actions = {
                     IconButton(onClick = onCloseClick) {
                         Icon(
@@ -99,7 +99,6 @@ fun CharacterDetailScreen(
             )
         }
     ) { paddingValues ->
-        // Основной контент экрана помещается в LazyColumn, который использует отступы от Scaffold.
         when (val currentState = state) {
             is CharacterDetailState.Loading -> {
                 Box(
@@ -117,23 +116,21 @@ fun CharacterDetailScreen(
                 val origin = characterDetails.origin
                 val location = characterDetails.location
 
-                // Используем LazyColumn как корневой элемент для всего прокручиваемого контента
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues) // Применяем отступы из Scaffold
-                        .padding(horizontal = 16.dp), // Добавляем горизонтальные отступы
+                        .padding(paddingValues)
+                        .padding(horizontal = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp) // Пространство между элементами списка
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Первый элемент: Изображение и имя
                     item {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                             AsyncImage(
                                 model = character.imageUrl,
                                 contentDescription = "Изображение ${character.name}",
                                 modifier = Modifier
-                                    .padding(top = 16.dp) // Отступ сверху для первого элемента
+                                    .padding(top = 16.dp)
                                     .size(200.dp)
                                     .clip(CircleShape),
                                 contentScale = ContentScale.Crop
@@ -147,25 +144,48 @@ fun CharacterDetailScreen(
                         }
                     }
 
-                    // Элементы для детальной информации
-                    item { DetailText(label = "Статус", value = character.status) }
-                    item { DetailText(label = "Вид", value = character.species) }
+                    // Теперь эти элементы кликабельны и вызывают onFilterClick
+                    item {
+                        DetailText(
+                            label = "Статус",
+                            value = character.status,
+                            onClick = { onFilterClick("status", character.status) }
+                        )
+                    }
+                    item {
+                        DetailText(
+                            label = "Вид",
+                            value = character.species,
+                            onClick = { onFilterClick("species", character.species) }
+                        )
+                    }
 
                     character.type?.let { type ->
                         if (type.isNotBlank()) {
-                            item { DetailText(label = "Тип", value = type) }
+                            item {
+                                DetailText(
+                                    label = "Тип",
+                                    value = type,
+                                    onClick = { onFilterClick("type", type) }
+                                )
+                            }
                         }
                     }
 
-                    item { DetailText(label = "Пол", value = character.gender) }
+                    item {
+                        DetailText(
+                            label = "Пол",
+                            value = character.gender,
+                            onClick = { onFilterClick("gender", character.gender) }
+                        )
+                    }
 
-                    // Детали происхождения и последней локации теперь кликабельны
+                    // Детали происхождения и последней локации
                     item {
                         DetailText(
                             label = "Происхождение",
                             value = origin.name,
                             onClick = {
-                                // Извлекаем ID из URL и передаем его в onLocationClick
                                 if (origin.url.isNotBlank()) {
                                     val locationId = origin.url.substringAfterLast("/").toIntOrNull()
                                     if (locationId != null) onLocationClick(locationId)
@@ -178,7 +198,6 @@ fun CharacterDetailScreen(
                             label = "Последняя локация",
                             value = location.name,
                             onClick = {
-                                // Извлекаем ID из URL и передаем его в onLocationClick
                                 if (location.url.isNotBlank()) {
                                     val locationId = location.url.substringAfterLast("/").toIntOrNull()
                                     if (locationId != null) onLocationClick(locationId)
@@ -187,20 +206,18 @@ fun CharacterDetailScreen(
                         )
                     }
 
-                    // Заголовок для списка эпизодов
                     if (characterDetails.episode.isNotEmpty()) {
                         item {
                             Text(
                                 text = "Эпизоды",
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                 modifier = Modifier
-                                    .fillMaxWidth() // Растянуть по ширине для выравнивания
+                                    .fillMaxWidth()
                                     .padding(top = 16.dp, bottom = 8.dp)
-                                    .padding(start = 0.dp) // Убираем лишний горизонтальный отступ
+                                    .padding(start = 0.dp)
                             )
                         }
 
-                        // Список эпизодов
                         items(characterDetails.episode, key = { it }) { episodeUrl ->
                             Card(
                                 modifier = Modifier
@@ -223,7 +240,6 @@ fun CharacterDetailScreen(
                             }
                         }
                     }
-                    // Можно добавить отступ снизу, если нужно
                     item { Box(modifier = Modifier.padding(bottom = 16.dp)) }
                 }
             }

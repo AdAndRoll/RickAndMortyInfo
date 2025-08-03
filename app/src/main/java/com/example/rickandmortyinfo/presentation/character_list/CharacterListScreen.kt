@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.example.domain.model.CharacterFilter
 import com.example.rickandmortyinfo.presentation.character_filter.CharacterFilterScreen
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterItem
 import com.example.rickandmortyinfo.presentation.character_list.components.CharacterListToolbar
@@ -31,8 +32,33 @@ import kotlinx.coroutines.launch
 @Composable
 fun CharacterListScreen(
     onCharacterClick: (Int) -> Unit,
+    // Добавлены параметры для получения фильтров из навигации
+    initialStatusFilter: String?,
+    initialGenderFilter: String?,
+    initialTypeFilter: String?,
     viewModel: CharactersViewModel = hiltViewModel()
 ) {
+    // Используем LaunchedEffect, чтобы при первой композиции экрана применить фильтры,
+    // переданные через навигацию.
+    LaunchedEffect(
+        key1 = initialStatusFilter,
+        key2 = initialGenderFilter,
+        key3 = initialTypeFilter
+    ) {
+        // Создаем новый объект фильтра, если хотя бы один из параметров не пустой.
+        if (!initialStatusFilter.isNullOrEmpty() ||
+            !initialGenderFilter.isNullOrEmpty() ||
+            !initialTypeFilter.isNullOrEmpty()
+        ) {
+            val newFilter = CharacterFilter(
+                status = initialStatusFilter,
+                gender = initialGenderFilter,
+                type = initialTypeFilter
+            )
+            viewModel.onFilterApplied(newFilter)
+        }
+    }
+
     val characters = viewModel.characters.collectAsLazyPagingItems()
     var showFilterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -62,8 +88,6 @@ fun CharacterListScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                // 1. Отображаем список, если он уже содержит элементы
-                // Это должно перекрыть случай, когда refresh еще Loading, но данные уже начали поступать
                 if (characters.itemCount > 0) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
@@ -89,8 +113,6 @@ fun CharacterListScreen(
                                 )
                             }
                         }
-
-                        // Состояние загрузки следующих страниц (append)
                         when (loadState.append) {
                             is LoadState.Loading -> {
                                 item(span = { GridItemSpan(maxLineSpan) }) {
@@ -109,50 +131,32 @@ fun CharacterListScreen(
                                         text = "Ошибка загрузки: ${error.error.localizedMessage ?: "Неизвестная ошибка"}",
                                         modifier = Modifier.fillMaxWidth().padding(16.dp)
                                     )
-                                    // Button(onClick = { characters.retry() }) { Text("Повторить append") }
                                 }
                             }
-                            else -> {} // NotLoading или нет ошибок
+                            else -> {}
                         }
                     }
-                }
-                // 2. Если список пуст, анализируем состояния загрузки
-                else {
+                } else {
                     when {
-                        // Пока идет первоначальная загрузка ИЛИ обновление через swipe-to-refresh
                         loadState.refresh is LoadState.Loading -> {
                             CircularProgressIndicator()
                         }
-                        // Ошибка при первоначальной загрузке ИЛИ обновлении
                         loadState.refresh is LoadState.Error -> {
                             val error = loadState.refresh as LoadState.Error
                             Text(
                                 text = "Ошибка: ${error.error.localizedMessage ?: "Неизвестная ошибка"}",
                                 modifier = Modifier.padding(16.dp)
                             )
-                            // Button(onClick = { characters.refresh() }) { Text("Повторить refresh") }
                         }
-                        // Первоначальная загрузка завершена, ошибок нет, но список пуст
                         loadState.refresh is LoadState.NotLoading &&
-                                loadState.append.endOfPaginationReached && // Убеждаемся, что и первая, и последующие загрузки завершены
+                                loadState.append.endOfPaginationReached &&
                                 characters.itemCount == 0 -> {
                             Text(
                                 text = "Персонажи не найдены.",
                                 modifier = Modifier.padding(16.dp)
                             )
                         }
-                        // Если refresh завершен, но append все еще может что-то загрузить (маловероятно для itemCount == 0, но для полноты)
-                        // или если просто еще не определились окончательно (например, начальное состояние перед первой загрузкой)
-                        // В этом случае тоже можно показывать индикатор, чтобы избежать "Персонажи не найдены" преждевременно
-                        else -> {
-                            // Это состояние может быть очень кратковременным.
-                            // Если предыдущие условия не покрывают его, и "мерцание" остается,
-                            // здесь может быть место для очень короткой задержки или специфической проверки.
-                            // Но в большинстве случаев, предыдущие условия должны его покрыть.
-                            // Если мерцание всё ещё тут, можно попробовать оставить CircularProgressIndicator()
-                            // как "fallback", пока Compose не "устаканит" состояния.
-                            // CircularProgressIndicator() // <-- Раскомментируйте, если проблема не уходит
-                        }
+                        else -> {}
                     }
                 }
             }
@@ -182,5 +186,3 @@ fun CharacterListScreen(
         }
     }
 }
-
-
