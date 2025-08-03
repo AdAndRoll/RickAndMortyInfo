@@ -90,7 +90,7 @@ class CharacterRepositoryImpl @Inject constructor(
             } else {
                 Log.d(TAG, "Детали персонажа не найдены в кэше. Выполняем сетевой запрос.")
                 // 3. Если данных нет, делаем сетевой запрос
-                when (val remoteResult = characterRemoteDataSource.getCharacterDetails(characterId)) {
+                when (val remoteResult = characterRemoteDataSource.getCharacterById(characterId)) {
                     is NetworkResult.Success -> {
                         Log.d(TAG, "Сетевой запрос успешен. Сохраняем в кэш.")
                         // 4. После успешного запроса сохраняем данные в кэш

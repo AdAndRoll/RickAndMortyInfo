@@ -8,7 +8,6 @@ import com.example.data.utils.NetworkResult
 import javax.inject.Inject
 import java.io.IOException
 import retrofit2.HttpException
-import retrofit2.Response
 
 /**
  * Удаленный источник данных для персонажей.
@@ -79,7 +78,7 @@ class CharacterRemoteDataSource @Inject constructor(
      * @param characterId ID персонажа, информацию о котором нужно получить.
      * @return [NetworkResult] с [CharacterDto] в случае успеха, или [Throwable] в случае ошибки.
      */
-    suspend fun getCharacterDetails(characterId: Int): NetworkResult<CharacterDto> {
+    suspend fun getCharacterById(characterId: Int): NetworkResult<CharacterDto> {
         return try {
             Log.d(TAG, "Making API call for character details with ID: $characterId")
             val response = api.getCharacterById(characterId)
@@ -93,6 +92,36 @@ class CharacterRemoteDataSource @Inject constructor(
             NetworkResult.Error(e)
         } catch (e: Exception) {
             Log.e(TAG, "An unexpected error occurred fetching details for ID $characterId: ${e.localizedMessage}", e)
+            NetworkResult.Error(e)
+        }
+    }
+
+    /**
+     * Получает полную информацию о нескольких персонажах по списку их ID.
+     * Этот метод объединяет ID в строку и делает один сетевой запрос.
+     *
+     * @param characterIds Список ID персонажей.
+     * @return [NetworkResult] со списком [CharacterDto] в случае успеха, или [Throwable] в случае ошибки.
+     */
+    suspend fun getCharactersByIds(characterIds: List<Int>): NetworkResult<List<CharacterDto>> {
+        return try {
+            val idsString = characterIds.joinToString(separator = ",")
+            Log.d(TAG, "Making API call for characters with IDs: $idsString")
+
+            // Retrofit и Moshi возвращают List<CharacterDto> даже для одного ID.
+            val response = api.getCharactersByIds(idsString)
+
+            Log.d(TAG, "API call successful for IDs: $idsString. Found ${response.size} characters.")
+            NetworkResult.Success(response)
+
+        } catch (e: IOException) {
+            Log.e(TAG, "Network or I/O error occurred fetching multiple characters: ${e.localizedMessage}")
+            NetworkResult.Error(e)
+        } catch (e: HttpException) {
+            Log.e(TAG, "HTTP error occurred fetching multiple characters: ${e.code()} - ${e.localizedMessage}")
+            NetworkResult.Error(e)
+        } catch (e: Exception) {
+            Log.e(TAG, "An unexpected error occurred fetching multiple characters: ${e.localizedMessage}", e)
             NetworkResult.Error(e)
         }
     }

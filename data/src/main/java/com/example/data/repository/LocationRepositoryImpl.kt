@@ -7,22 +7,22 @@ import com.example.data.mappers.toDomainModel
 import com.example.data.mappers.toEntity
 import com.example.data.remote.datasources.CharacterRemoteDataSource
 import com.example.data.remote.datasources.LocationRemoteDataSource
+import com.example.data.remote.dto.CharacterDto
 import com.example.data.utils.NetworkResult
 import com.example.domain.model.LocationDetail
 import com.example.domain.model.Resident
 import com.example.domain.repository.LocationRepository
 import com.example.domain.utils.Result
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
-import javax.inject.Inject
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Реализация репозитория для работы с данными о локациях.
- * Координирует получение детальных данных из удаленного и локального источников,
- * а также инициирует загрузку данных о персонажах-резидентах.
+ * Координирует получение детальных данных из удаленного и локального источников.
  *
  * @param locationRemoteDataSource Источник данных для сетевых запросов локаций.
  * @param locationLocalDataSource Источник данных для локальной базы Room.
@@ -41,9 +41,8 @@ class LocationRepositoryImpl @Inject constructor(
      * Новая стратегия загрузки:
      * 1. Сначала возвращает данные из кэша.
      * 2. Выполняет сетевой запрос.
-     * 3. Загружает первые 30 имен резидентов (или всех, если их меньше 30),
-     * ждет их завершения и отправляет результат на экран.
-     * 4. Запускает фоновую загрузку остальных резидентов, не блокируя UI.
+     * 3. Загружает **пакетно** первые 30 резидентов, ждет их завершения и отправляет результат на экран.
+     * 4. Запускает фоновую загрузку **остальных** резидентов, не блокируя UI.
      *
      * @param locationId ID локации.
      * @return [Flow] с объектом [Result<LocationDetail>], который содержит данные
@@ -65,36 +64,28 @@ class LocationRepositoryImpl @Inject constructor(
                 val detailsEntity = remoteResult.data.toEntity()
                 locationLocalDataSource.saveLocationDetails(detailsEntity)
 
-                // Разделяем список резидентов на две части: первые 30 и остальные
-                val residentsToFetchInitially = detailsEntity.residents.take(30)
-                val remainingResidents = detailsEntity.residents.drop(30)
-
-                // Запускаем асинхронную загрузку первых 30 резидентов и ждем ее завершения.
-                coroutineScope {
-                    residentsToFetchInitially.forEach { url ->
-                        launch {
-                            val characterId = url.substringAfterLast("/").toIntOrNull()
-                            if (characterId != null) {
-                                fetchAndSaveCharacterDetails(characterId)
-                            }
-                        }
-                    }
+                // Извлекаем ID из URL-адресов резидентов
+                val allResidentIds = detailsEntity.residents.mapNotNull { url ->
+                    url.substringAfterLast("/").toIntOrNull()
                 }
 
+                // Разделяем список ID на две части: первые 30 и остальные
+                val idsToFetchInitially = allResidentIds.take(30)
+                val remainingIds = allResidentIds.drop(30)
+
+                // Запускаем асинхронную загрузку первых 30 резидентов и ждем ее завершения.
+                // Это решает проблему состояния гонки, когда данные читаются до того, как они были сохранены.
+                fetchAndSaveCharacters(idsToFetchInitially)
+
                 // После того, как первые 30 персонажей загружены, получаем их данные из кэша.
-                val initialResidents = getResidents(residentsToFetchInitially)
+                val initialResidents = getResidents(detailsEntity.residents.take(30))
                 // Отправляем на экран локацию с частичным, но уже заполненным списком Resident.
                 emit(Result.Success(detailsEntity.toDomainModel(initialResidents)))
 
                 // Запускаем фоновую загрузку оставшихся резидентов, не дожидаясь ее.
                 coroutineScope {
-                    remainingResidents.forEach { url ->
-                        launch {
-                            val characterId = url.substringAfterLast("/").toIntOrNull()
-                            if (characterId != null) {
-                                fetchAndSaveCharacterDetails(characterId)
-                            }
-                        }
+                    launch {
+                        fetchAndSaveCharacters(remainingIds)
                     }
                 }
             }
@@ -129,19 +120,37 @@ class LocationRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Получает детали персонажа по ID и сохраняет их в локальной базе данных.
+     * Получает детали нескольких персонажей по списку ID и сохраняет их в локальной базе данных.
+     * Улучшено для обработки запросов с одним и несколькими ID.
      *
-     * @param characterId ID персонажа.
+     * @param characterIds Список ID персонажей.
      */
-    private suspend fun fetchAndSaveCharacterDetails(characterId: Int) {
-        when (val remoteResult = characterRemoteDataSource.getCharacterDetails(characterId)) {
+    private suspend fun fetchAndSaveCharacters(characterIds: List<Int>) {
+        if (characterIds.isEmpty()) return
+
+        // Логика выбора метода API на основе количества ID
+        val remoteResult = if (characterIds.size == 1) {
+            // Запрашиваем одного персонажа
+            characterRemoteDataSource.getCharacterById(characterIds.first())
+        } else {
+            // Запрашиваем список персонажей
+            characterRemoteDataSource.getCharactersByIds(characterIds)
+        }
+
+        when (remoteResult) {
             is NetworkResult.Success -> {
-                val characterEntity = remoteResult.data.toCharacterDetailsEntity()
-                characterDetailsDao.insertCharacterDetails(characterEntity)
+                val characters = if (remoteResult.data is List<*>) {
+                    remoteResult.data as List<CharacterDto>
+                } else {
+                    listOf(remoteResult.data as CharacterDto)
+                }
+
+                val characterEntities = characters.map { it.toCharacterDetailsEntity() }
+                characterEntities.forEach { characterDetailsDao.insertCharacterDetails(it) }
             }
             is NetworkResult.Error -> {
-                // Обработка ошибки загрузки одного персонажа, например, логирование
-                println("Error fetching character $characterId: ${remoteResult.exception.message}")
+                // Обработка ошибки загрузки, например, логирование
+                println("Error fetching characters with IDs $characterIds: ${remoteResult.exception.message}")
             }
         }
     }

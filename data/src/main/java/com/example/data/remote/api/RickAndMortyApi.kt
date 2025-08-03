@@ -39,4 +39,13 @@ interface RickAndMortyApi {
      */
     @GET("character/{id}")
     suspend fun getCharacterById(@Path("id") id: Int): CharacterDto
+
+    /**
+     * Получает полную информацию о нескольких персонажах по списку их ID.
+     *
+     * @param ids Список ID персонажей, разделенных запятыми (например, "1,2,3").
+     * @return Возвращает список [List]<[CharacterDto]>.
+     */
+    @GET("character/{ids}")
+    suspend fun getCharactersByIds(@Path("ids") ids: String): List<CharacterDto>
 }
