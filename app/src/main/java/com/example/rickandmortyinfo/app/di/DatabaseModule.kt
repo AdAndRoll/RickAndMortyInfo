@@ -2,6 +2,7 @@ package com.example.rickandmortyinfo.app.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.data.db.dao.LocationDao
 import com.example.data.local.converters.CharacterTypeConverters
 import com.example.data.local.dao.CharacterDao
 import com.example.data.local.dao.CharacterDetailsDao
@@ -80,5 +81,14 @@ object DatabaseModule {
     @Singleton
     fun provideCharacterDetailsDao(database: CharacterDatabase): CharacterDetailsDao {
         return database.characterDetailsDao()
+    }
+
+    /**
+     * Предоставляет DAO для доступа к данным о локациях.
+     */
+    @Provides
+    @Singleton
+    fun provideLocationDao(database: CharacterDatabase): LocationDao {
+        return database.locationDao()
     }
 }

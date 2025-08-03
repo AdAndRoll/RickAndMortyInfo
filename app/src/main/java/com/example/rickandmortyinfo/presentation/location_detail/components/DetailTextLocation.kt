@@ -1,8 +1,6 @@
-package com.example.rickandmortyinfo.presentation.character_detail.components
+package com.example.rickandmortyinfo.presentation.location_detail.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,14 +15,13 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Компонент, который отображает заголовок и значение детали.
- * Используется для полей вроде "Статус: Живой".
+ * Используется для полей вроде "Тип: Планета".
  */
 @Composable
-fun DetailText(label: String, value: String, onClick: () -> Unit = {}) {
+fun DetailTextLocation(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

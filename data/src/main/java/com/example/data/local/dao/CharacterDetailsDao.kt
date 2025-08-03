@@ -36,4 +36,15 @@ interface CharacterDetailsDao {
      */
     @Query("DELETE FROM character_details WHERE id = :characterId")
     suspend fun deleteCharacterDetails(characterId: Int): Int
+
+    /**
+     * Получает детали персонажа по его ID.
+     * Возвращаемый тип теперь `CharacterDetailsEntity?`, что позволяет вернуть null,
+     * если персонаж не найден в базе данных.
+     *
+     * @param characterId ID персонажа.
+     * @return [CharacterDetailsEntity] или null, если персонаж не найден.
+     */
+    @Query("SELECT * FROM character_details WHERE id = :characterId")
+    suspend fun getCharacterDetailsById(characterId: Int): CharacterDetailsEntity?
 }

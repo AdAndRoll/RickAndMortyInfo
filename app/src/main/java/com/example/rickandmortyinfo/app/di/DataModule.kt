@@ -6,9 +6,14 @@ import com.example.data.repository.CharacterRepositoryImpl
 import com.example.domain.repository.CharacterRepository
 import com.example.data.local.database.CharacterDatabase
 import com.example.data.local.dao.CharacterDao
+import com.example.data.local.dao.CharacterDetailsDao
 import com.example.data.local.dao.RemoteKeyDao
 import com.example.data.local.datasources.CharacterDetailsLocalDataSource
+import com.example.data.local.datasources.LocationLocalDataSource
 import com.example.data.remote.api.RickAndMortyApi
+import com.example.data.remote.datasources.LocationRemoteDataSource
+import com.example.data.repository.LocationRepositoryImpl
+import com.example.domain.repository.LocationRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -58,6 +63,28 @@ object DataModule {
             characterLocalDataSource,
             characterDetailsLocalDataSource, // <--- ПЕРЕДАЕМ ЕГО ТРЕТЬИМ
             characterDatabase                // <--- CharacterDatabase ПЕРЕДАЕМ ЧЕТВЕРТЫМ
+        )
+    }
+
+
+    /**
+     * Предоставляет реализацию интерфейса [LocationRepository].
+
+     */
+    @Provides
+    @Singleton
+    fun provideLocationRepository(
+        locationRemoteDataSource: LocationRemoteDataSource,
+        locationLocalDataSource: LocationLocalDataSource,
+        characterDetailsDao: CharacterDetailsDao,
+        // Добавляем CharacterRemoteDataSource для загрузки деталей резидентов.
+        characterRemoteDataSource: CharacterRemoteDataSource
+    ): LocationRepository {
+        return LocationRepositoryImpl(
+            locationRemoteDataSource,
+            locationLocalDataSource,
+            characterRemoteDataSource, // Передаём новую зависимость
+            characterDetailsDao
         )
     }
 }

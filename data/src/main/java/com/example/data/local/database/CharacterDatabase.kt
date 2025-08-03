@@ -3,12 +3,14 @@ package com.example.data.local.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.data.db.dao.LocationDao
 import com.example.data.local.converters.CharacterTypeConverters
 import com.example.data.local.dao.CharacterDao
 import com.example.data.local.dao.CharacterDetailsDao
 import com.example.data.local.dao.RemoteKeyDao
 import com.example.data.local.entity.CharacterDetailsEntity
 import com.example.data.local.entity.CharacterEntity
+import com.example.data.local.entity.LocationDetailEntity
 import com.example.data.local.entity.RemoteKeyEntity
 
 /**
@@ -21,8 +23,8 @@ import com.example.data.local.entity.RemoteKeyEntity
  * @property exportSchema Если true, Room будет экспортировать схему базы данных в файл JSON.
  */
 @Database(
-    entities = [CharacterEntity::class, RemoteKeyEntity::class, CharacterDetailsEntity::class],
-    version = 7,
+    entities = [CharacterEntity::class, RemoteKeyEntity::class, CharacterDetailsEntity::class, LocationDetailEntity::class ],
+    version =10,
     exportSchema = false
 )
 @TypeConverters(CharacterTypeConverters::class)
@@ -45,4 +47,7 @@ abstract class CharacterDatabase : RoomDatabase() {
      * @return Экземпляр [CharacterDetailsDao].
      */
     abstract fun characterDetailsDao(): CharacterDetailsDao
+
+    // Добавляем абстрактный метод для получения DAO локаций
+    abstract fun locationDao(): LocationDao
 }

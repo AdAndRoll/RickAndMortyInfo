@@ -1,5 +1,6 @@
 package com.example.presentation.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,32 +41,7 @@ import com.example.rickandmortyinfo.presentation.character_detail.CharacterDetai
 import com.example.rickandmortyinfo.presentation.character_detail.CharacterDetailViewModel
 import com.example.domain.model.RMCharacterDetailed
 import com.example.domain.model.RMCharacter
-
-/**
- * Компонент, который отображает заголовок и значение детали.
- * Используется для полей вроде "Статус: Живой".
- */
-@Composable
-fun DetailText(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "$label:",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.End
-        )
-    }
-}
+import com.example.rickandmortyinfo.presentation.character_detail.components.DetailText
 
 
 /**
@@ -73,6 +49,7 @@ fun DetailText(label: String, value: String) {
  *
  * @param characterId ID персонажа, который нужно отобразить.
  * @param onBackClick Функция, которая будет вызвана при нажатии кнопки "назад".
+ * @param onLocationClick Функция, которая будет вызвана при нажатии на локацию.
  * @param viewModel ViewModel для управления состоянием экрана, предоставляемый Hilt.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +57,7 @@ fun DetailText(label: String, value: String) {
 fun CharacterDetailScreen(
     characterId: Int,
     onBackClick: () -> Unit,
+    onLocationClick: (Int) -> Unit, // Новый параметр для навигации по локациям
     viewModel: CharacterDetailViewModel = hiltViewModel()
 ) {
     LaunchedEffect(key1 = characterId) {
@@ -168,8 +146,34 @@ fun CharacterDetailScreen(
                     }
 
                     item { DetailText(label = "Пол", value = character.gender) }
-                    item { DetailText(label = "Происхождение", value = origin.name) }
-                    item { DetailText(label = "Последняя локация", value = location.name) }
+
+                    // Детали происхождения и последней локации теперь кликабельны
+                    item {
+                        DetailText(
+                            label = "Происхождение",
+                            value = origin.name,
+                            onClick = {
+                                // Извлекаем ID из URL и передаем его в onLocationClick
+                                if (origin.url.isNotBlank()) {
+                                    val locationId = origin.url.substringAfterLast("/").toIntOrNull()
+                                    if (locationId != null) onLocationClick(locationId)
+                                }
+                            }
+                        )
+                    }
+                    item {
+                        DetailText(
+                            label = "Последняя локация",
+                            value = location.name,
+                            onClick = {
+                                // Извлекаем ID из URL и передаем его в onLocationClick
+                                if (location.url.isNotBlank()) {
+                                    val locationId = location.url.substringAfterLast("/").toIntOrNull()
+                                    if (locationId != null) onLocationClick(locationId)
+                                }
+                            }
+                        )
+                    }
 
                     // Заголовок для списка эпизодов
                     if (characterDetails.episode.isNotEmpty()) {

@@ -1,6 +1,7 @@
 package com.example.rickandmortyinfo.app.di
 
 
+import com.example.data.remote.api.LocationApiService
 import com.example.data.remote.api.RickAndMortyApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -78,5 +79,14 @@ object NetworkModule {
     @Singleton
     fun provideRickAndMortyApi(retrofit: Retrofit): RickAndMortyApi {
         return retrofit.create(RickAndMortyApi::class.java)
+    }
+
+    /**
+     * Предоставляет сервис для работы с локациями.
+     */
+    @Provides
+    @Singleton
+    fun provideLocationApiService(retrofit: Retrofit): LocationApiService {
+        return retrofit.create(LocationApiService::class.java)
     }
 }

@@ -1,8 +1,10 @@
 package com.example.rickandmortyinfo.app.di
 
 import com.example.domain.repository.CharacterRepository
+import com.example.domain.repository.LocationRepository
 import com.example.domain.usecases.GetCharacterDetailsUseCase
 import com.example.domain.usecases.GetCharactersUseCase
+import com.example.domain.usecases.GetLocationDetailsUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -41,5 +43,16 @@ object DomainModule {
         // Если у него другие зависимости, укажите их здесь
     ): GetCharacterDetailsUseCase {
         return GetCharacterDetailsUseCase(repository) // Создаем экземпляр
+    }
+
+    /**
+     * Предоставляет [GetLocationDetailsUseCase].
+     */
+    @Provides
+    @Singleton
+    fun provideGetLocationDetailsUseCase(
+        repository: LocationRepository
+    ): GetLocationDetailsUseCase {
+        return GetLocationDetailsUseCase(repository)
     }
 }
