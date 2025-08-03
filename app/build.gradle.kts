@@ -67,7 +67,8 @@ dependencies {
     implementation(libs.coil.compose)
     implementation("io.coil-kt:coil:2.7.0")
     implementation("io.coil-kt:coil-gif:2.7.0")
-
+    // Google Gson для TypeConverters в Room
+    implementation("com.google.code.gson:gson:2.13.1")
     // Retrofit + Moshi
     implementation(libs.retrofit)
     implementation(libs.converter.moshi)
