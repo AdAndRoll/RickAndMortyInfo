@@ -1,6 +1,6 @@
 package com.example.domain.model
 
-data class LocationRM(
+data class RMLocation(
     val name: String,
     val url: String
 )

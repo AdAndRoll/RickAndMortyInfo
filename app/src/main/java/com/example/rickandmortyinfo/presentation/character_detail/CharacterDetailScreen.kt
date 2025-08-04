@@ -1,5 +1,6 @@
 package com.example.rickandmortyinfo.presentation.character_detail
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.domain.model.RMCharacter
 import com.example.domain.model.RMCharacterDetailed
-
+import com.example.domain.model.RMCharacterEpisodeSummary
 import com.example.rickandmortyinfo.presentation.character_detail.components.DetailText
 
 
@@ -53,6 +54,7 @@ import com.example.rickandmortyinfo.presentation.character_detail.components.Det
  * @param onCloseClick Функция, которая будет вызвана при нажатии кнопки "закрыть" (крестик).
  * @param onLocationClick Функция, которая будет вызвана при нажатии на локацию.
  * @param onFilterClick Функция для навигации с фильтром.
+ * @param onEpisodeClick Функция, которая будет вызвана при нажатии на эпизод.
  * @param viewModel ViewModel для управления состоянием экрана, предоставляемый Hilt.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,6 +65,7 @@ fun CharacterDetailScreen(
     onCloseClick: () -> Unit,
     onLocationClick: (Int) -> Unit,
     onFilterClick: (String, String) -> Unit,
+    onEpisodeClick: (Int) -> Unit, // Новый параметр для навигации к деталям эпизода
     viewModel: CharacterDetailViewModel = hiltViewModel()
 ) {
     LaunchedEffect(key1 = characterId) {
@@ -220,7 +223,7 @@ fun CharacterDetailScreen(
                             )
                         }
 
-                        if (characterDetails.episode.isNotEmpty()) {
+                        if (characterDetails.episodes.isNotEmpty()) {
                             item {
                                 Text(
                                     text = "Эпизоды",
@@ -232,13 +235,14 @@ fun CharacterDetailScreen(
                                 )
                             }
 
-                            items(characterDetails.episode, key = { it }) { episodeUrl ->
+                            // Обновленный блок для отображения списка эпизодов
+                            items(characterDetails.episodes, key = { it.id }) { episodeSummary ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
+                                        .clickable { onEpisodeClick(episodeSummary.id) }
                                 ) {
-                                    val episodeNumber = episodeUrl.substringAfterLast("/")
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -246,7 +250,7 @@ fun CharacterDetailScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "Эпизод $episodeNumber",
+                                            text = episodeSummary.name,
                                             style = MaterialTheme.typography.bodyMedium,
                                             modifier = Modifier.weight(1f)
                                         )

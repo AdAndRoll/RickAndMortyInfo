@@ -1,15 +1,25 @@
 package com.example.rickandmortyinfo.app.di
 
+
 import com.example.data.local.dao.CharacterDao
 import com.example.data.local.dao.CharacterDetailsDao
+import com.example.data.local.dao.RMEpisodeDao
 import com.example.data.local.dao.RemoteKeyDao
+import com.example.data.repository.EpisodeRepositoryImpl
+import com.example.domain.repository.EpisodeRepository
+
 import com.example.data.local.database.CharacterDatabase
 import com.example.data.local.datasources.CharacterDetailsLocalDataSource
 import com.example.data.local.datasources.CharacterLocalDataSource
+
 import com.example.data.local.datasources.LocationLocalDataSource
+import com.example.data.local.episodes.datasources.EpisodeLocalDataSource
+
 import com.example.data.remote.api.RickAndMortyApi
 import com.example.data.remote.datasources.CharacterRemoteDataSource
+import com.example.data.remote.datasources.EpisodeRemoteDataSource
 import com.example.data.remote.datasources.LocationRemoteDataSource
+import com.example.data.remote.episodes.api.RMEpisodeApi
 import com.example.data.repository.CharacterRepositoryImpl
 import com.example.data.repository.LocationRepositoryImpl
 import com.example.domain.repository.CharacterRepository
@@ -66,10 +76,39 @@ object DataModule {
         )
     }
 
+    /**
+     * Предоставляет источник данных для сетевых запросов по эпизодам.
+     */
+    @Provides
+    @Singleton
+    fun provideEpisodeRemoteDataSource(api: RMEpisodeApi): EpisodeRemoteDataSource {
+        return EpisodeRemoteDataSource(api)
+    }
+
+    /**
+     * Предоставляет источник данных для локального кэша эпизодов.
+     */
+    @Provides
+    @Singleton
+    fun provideEpisodeLocalDataSource(dao: RMEpisodeDao): EpisodeLocalDataSource {
+        return EpisodeLocalDataSource(dao)
+    }
+
+    /**
+     * Предоставляет реализацию интерфейса [EpisodeRepository].
+     */
+    @Provides
+    @Singleton
+    fun provideEpisodeRepository(
+        remoteDataSource: EpisodeRemoteDataSource,
+        localDataSource: EpisodeLocalDataSource
+    ): EpisodeRepository {
+        return EpisodeRepositoryImpl(remoteDataSource, localDataSource)
+    }
+
 
     /**
      * Предоставляет реализацию интерфейса [LocationRepository].
-
      */
     @Provides
     @Singleton

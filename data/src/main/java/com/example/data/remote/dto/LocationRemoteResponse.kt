@@ -1,10 +1,10 @@
 package com.example.data.remote.dto
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
 
 /**
  * Модель данных для локации, получаемая с удаленного API.
- * Используется для маппинга JSON-ответа в объект Kotlin.
+ * Использует аннотацию @Json от Moshi для маппинга JSON-ответа в объект Kotlin.
  *
  * @property id Уникальный идентификатор локации.
  * @property name Название локации.
@@ -15,18 +15,18 @@ import com.google.gson.annotations.SerializedName
  * @property created Дата создания записи.
  */
 data class LocationRemoteResponse(
-    @SerializedName("id")
+    @Json(name = "id")
     val id: Int,
-    @SerializedName("name")
+    @Json(name = "name")
     val name: String,
-    @SerializedName("type")
+    @Json(name = "type")
     val type: String,
-    @SerializedName("dimension")
+    @Json(name = "dimension")
     val dimension: String,
-    @SerializedName("residents")
+    @Json(name = "residents")
     val residents: List<String>,
-    @SerializedName("url")
+    @Json(name = "url")
     val url: String,
-    @SerializedName("created")
+    @Json(name = "created")
     val created: String
 )

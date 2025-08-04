@@ -1,40 +1,47 @@
+// Файл: com/example/data/local/converters/CharacterTypeConverters.kt
+
 package com.example.data.local.converters
 
 import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import javax.inject.Inject
 
 /**
- * TypeConverter для преобразования списка строк в JSON-строку и обратно.
- * Используется Room для сохранения `List<String>` в базе данных.
+ * Единый класс преобразователей типов для Room.
+ * Он содержит все необходимые конвертеры для работы с сущностями.
+ *
+ * @param moshi Экземпляр Moshi, предоставленный через DI.
  */
 @ProvidedTypeConverter
-class CharacterTypeConverters(private val gson: Gson) {
+class CharacterTypeConverters @Inject constructor(private val moshi: Moshi) {
+
+    // Создаем адаптер Moshi для преобразования списка строк.
+    private val stringListAdapter: JsonAdapter<List<String>> = moshi.adapter(
+        Types.newParameterizedType(List::class.java, String::class.java)
+    )
 
     /**
-     * Преобразует JSON-строку обратно в List<String>.
-     *
-     * @param value JSON-строка.
-     * @return List<String>.
-     */
-    @TypeConverter
-    fun fromStringList(value: String): List<String> {
-
-        val listType = object : TypeToken<List<String>>() {}.type
-
-        return gson.fromJson(value, listType)
-    }
-
-    /**
-     * Преобразует List<String> в JSON-строку для сохранения в базе данных.
-     *
+     * Преобразует List<String> в JSON-строку с помощью Moshi для сохранения в базе данных.
      * @param list Список строк.
      * @return JSON-строка.
      */
     @TypeConverter
-    fun toStringList(list: List<String>): String {
+    fun fromStringList(list: List<String>?): String? {
+        if (list == null) return null
+        return stringListAdapter.toJson(list)
+    }
 
-        return gson.toJson(list)
+    /**
+     * Преобразует JSON-строку обратно в List<String> с помощью Moshi.
+     * @param json JSON-строка.
+     * @return Список строк.
+     */
+    @TypeConverter
+    fun toStringList(json: String?): List<String>? {
+        if (json == null) return null
+        return stringListAdapter.fromJson(json)
     }
 }

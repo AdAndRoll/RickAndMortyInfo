@@ -1,3 +1,5 @@
+// Файл: com/example/rickandmortyinfo/app/di/DatabaseModule.kt
+
 package com.example.rickandmortyinfo.app.di
 
 import android.content.Context
@@ -6,10 +8,10 @@ import com.example.data.db.dao.LocationDao
 import com.example.data.local.converters.CharacterTypeConverters
 import com.example.data.local.dao.CharacterDao
 import com.example.data.local.dao.CharacterDetailsDao
+import com.example.data.local.dao.RMEpisodeDao
 import com.example.data.local.dao.RemoteKeyDao
 import com.example.data.local.database.CharacterDatabase
-import com.google.gson.Gson
-
+import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,35 +28,43 @@ import javax.inject.Singleton
 object DatabaseModule {
 
     /**
-     * Предоставляет синглтон-экземпляр Gson.
-     */
-    @Provides
-    @Singleton
-    fun provideGson(): Gson {
-        return Gson()
-    }
-
-    /**
      * Предоставляет синглтон-экземпляр базы данных Room.
+     * Hilt автоматически внедряет все зависимости из этого модуля.
+     *
      * @param context Контекст приложения, предоставляемый Hilt.
-     * @param gson Экземпляр Gson для конвертеров типов.
+     * @param characterTypeConverters Конвертер типов для персонажей, предоставляемый Hilt.
+     * @param locationConverters Конвертер типов для локаций, предоставляемый Hilt.
      * @return Экземпляр [CharacterDatabase].
      */
     @Provides
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context,
-        gson: Gson
+        characterTypeConverters: CharacterTypeConverters,
     ): CharacterDatabase {
         return Room.databaseBuilder(
             context,
             CharacterDatabase::class.java,
             "rick_and_morty_db"
         )
-            .addTypeConverter(CharacterTypeConverters(gson))
+            .addTypeConverter(characterTypeConverters)
             .fallbackToDestructiveMigration(true)
             .build()
     }
+
+    /**
+     * Предоставляет синглтон-экземпляр CharacterTypeConverters.
+     * Hilt создает этот конвертер, используя экземпляр Moshi.
+     *
+     * @param moshi Экземпляр Moshi для конвертеров типов.
+     * @return Экземпляр [CharacterTypeConverters].
+     */
+    @Provides
+    @Singleton
+    fun provideCharacterTypeConverters(moshi: Moshi): CharacterTypeConverters {
+        return CharacterTypeConverters(moshi)
+    }
+
 
     /**
      * Предоставляет DAO для доступа к данным списка персонажей.
@@ -90,5 +100,14 @@ object DatabaseModule {
     @Singleton
     fun provideLocationDao(database: CharacterDatabase): LocationDao {
         return database.locationDao()
+    }
+
+    /**
+     * Предоставляет DAO для доступа к данным об эпизодах.
+     */
+    @Provides
+    @Singleton
+    fun provideEpisodeDao(database: CharacterDatabase): RMEpisodeDao {
+        return database.episodeDao()
     }
 }

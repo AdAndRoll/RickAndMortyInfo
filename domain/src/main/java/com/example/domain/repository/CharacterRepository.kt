@@ -4,6 +4,7 @@ import androidx.paging.PagingData
 import com.example.domain.model.CharacterFilter
 import com.example.domain.model.RMCharacter
 import com.example.domain.model.RMCharacterDetailed
+import com.example.domain.model.RMCharacterDetailsRaw
 import com.example.domain.utils.Result
 import kotlinx.coroutines.flow.Flow
 
@@ -27,10 +28,11 @@ interface CharacterRepository {
     suspend fun refreshCharacters()
 
     /**
-     * Получает полную информацию о персонаже по его ID.
+     * Получает детальную информацию о персонаже по его ID.
+     * Возвращает "сырые" данные, включая список URL-адресов эпизодов.
      *
      * @param characterId ID персонажа.
-     * @return [Result] с [RMCharacterDetailed] в случае успеха, или [Throwable] в случае ошибки.
+     * @return [Result] с [RMCharacterDetailsRaw] в случае успеха, или [Throwable] в случае ошибки.
      */
-    suspend fun getCharacterDetails(characterId: Int): Result<RMCharacterDetailed>
+    suspend fun getCharacterDetails(characterId: Int): Result<RMCharacterDetailsRaw>
 }

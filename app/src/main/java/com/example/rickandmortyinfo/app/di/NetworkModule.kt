@@ -1,8 +1,10 @@
-package com.example.rickandmortyinfo.app.di
+// Файл: com/example/rickandmortyinfo/app/di/NetworkModule.kt
 
+package com.example.rickandmortyinfo.app.di
 
 import com.example.data.remote.api.LocationApiService
 import com.example.data.remote.api.RickAndMortyApi
+import com.example.data.remote.episodes.api.RMEpisodeApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -47,11 +49,16 @@ object NetworkModule {
             .build()
     }
 
+    /**
+     * Предоставляет синглтон-экземпляр Moshi.
+     * Мы добавляем KotlinJsonAdapterFactory для корректной работы с классами данных Kotlin.
+     * Этот Moshi будет использоваться как для сетевых, так и для локальных операций с JSON.
+     */
     @Provides
     @Singleton
     fun provideMoshi(): Moshi {
         return Moshi.Builder()
-            .add(KotlinJsonAdapterFactory())
+            .addLast(KotlinJsonAdapterFactory())
             .build()
     }
 
@@ -87,5 +94,14 @@ object NetworkModule {
     @Singleton
     fun provideLocationApiService(retrofit: Retrofit): LocationApiService {
         return retrofit.create(LocationApiService::class.java)
+    }
+
+    /**
+     * Предоставляет сервис для работы с эпизодами.
+     */
+    @Provides
+    @Singleton
+    fun provideRMEpisodeApi(retrofit: Retrofit): RMEpisodeApi {
+        return retrofit.create(RMEpisodeApi::class.java)
     }
 }

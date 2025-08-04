@@ -10,14 +10,14 @@ import com.example.data.local.database.CharacterDatabase
 import com.example.data.local.datasources.CharacterDetailsLocalDataSource
 import com.example.data.local.datasources.CharacterLocalDataSource
 import com.example.data.mappers.toCharacter
-import com.example.data.mappers.toCharacterDetailed
+import com.example.data.mappers.toCharacterDetailsRaw // Используем новый маппер
 import com.example.data.mappers.toCharacterDetailsEntity
 import com.example.data.remote.datasources.CharacterRemoteDataSource
 import com.example.data.remote.mediator.CharacterRemoteMediator
 import com.example.data.utils.NetworkResult
 import com.example.domain.model.CharacterFilter
 import com.example.domain.model.RMCharacter
-import com.example.domain.model.RMCharacterDetailed
+import com.example.domain.model.RMCharacterDetailsRaw // Теперь репозиторий возвращает эту модель
 import com.example.domain.repository.CharacterRepository
 import com.example.domain.utils.Result
 import kotlinx.coroutines.flow.Flow
@@ -70,13 +70,13 @@ class CharacterRepositoryImpl @Inject constructor(
     }
 
 
-    override suspend fun getCharacterDetails(characterId: Int): Result<RMCharacterDetailed> {
+    override suspend fun getCharacterDetails(characterId: Int): Result<RMCharacterDetailsRaw> {
         Log.d(TAG, "Запрос деталей персонажа с ID: $characterId")
         return try {
             val localDetails = characterDetailsLocalDataSource.getCharacterDetails(characterId)
             if (localDetails != null) {
                 Log.d(TAG, "Детали персонажа найдены в кэше.")
-                Result.Success(localDetails.toCharacterDetailed())
+                Result.Success(localDetails.toCharacterDetailsRaw())
             } else {
                 Log.d(TAG, "Детали персонажа не найдены в кэше. Выполняем сетевой запрос.")
                 when (val remoteResult = characterRemoteDataSource.getCharacterById(characterId)) {
@@ -84,7 +84,7 @@ class CharacterRepositoryImpl @Inject constructor(
                         Log.d(TAG, "Сетевой запрос успешен. Сохраняем в кэш.")
                         val detailsEntity = remoteResult.data.toCharacterDetailsEntity()
                         characterDetailsLocalDataSource.insertCharacterDetails(detailsEntity)
-                        Result.Success(detailsEntity.toCharacterDetailed())
+                        Result.Success(detailsEntity.toCharacterDetailsRaw())
                     }
 
                     is NetworkResult.Error -> {

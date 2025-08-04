@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.rickandmortyinfo.presentation.character_detail.CharacterDetailScreen
 import com.example.rickandmortyinfo.presentation.character_list.CharacterListScreen
+import com.example.rickandmortyinfo.presentation.episode_detail.EpisodeDetailScreen
 import com.example.rickandmortyinfo.presentation.location_detail.LocationDetailScreen
 
 @Composable
@@ -76,6 +77,10 @@ fun RickAndMortyNavHost() {
                         else -> "character_list"
                     }
                     navController.navigate(route)
+                },
+                // Добавлена новая навигация на экран деталей эпизода
+                onEpisodeClick = { episodeId ->
+                    navController.navigate("episode_detail/$episodeId")
                 }
             )
         }
@@ -90,6 +95,22 @@ fun RickAndMortyNavHost() {
                 onCloseClick = {
                     navController.popBackStack("character_list", false)
                 },
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onCharacterClick = { characterId ->
+                    navController.navigate("character_detail/$characterId")
+                }
+            )
+        }
+
+        // Новый composable для экрана деталей эпизода
+        composable(
+            route = "episode_detail/{episodeId}",
+            arguments = listOf(navArgument("episodeId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val episodeId = backStackEntry.arguments?.getInt("episodeId") ?: -1
+            EpisodeDetailScreen(
                 onBackClick = {
                     navController.popBackStack()
                 },

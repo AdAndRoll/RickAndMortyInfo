@@ -31,7 +31,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = "1.8" // JvmTarget 1.8 также требуется
+        jvmTarget = "1.8"
+        freeCompilerArgs = listOf("-XXLanguage:+PropertyParamAnnotationDefaultTargetMode")
+        // JvmTarget 1.8 также требуется
     }
 
 }
@@ -54,12 +56,12 @@ dependencies {
 
     // Retrofit for network requests
     implementation(libs.retrofit)
-    implementation(libs.converter.gson) // For JSON conversion (вам также нужно converter.moshi, если используете Moshi)
+     // For JSON conversion (вам также нужно converter.moshi, если используете Moshi)
     // У вас в app-модуле: implementation(libs.converter.moshi)
     // Убедитесь, что используете один и тот же конвертер: Moshi или Gson
     // Если используете Moshi, то:
-    // implementation(libs.converter.moshi)
-    // implementation(libs.moshi.kotlin)
+    implementation(libs.converter.moshi)
+    implementation(libs.moshi.kotlin)
 
 
     // Room for local database caching

@@ -1,3 +1,5 @@
+// Файл: com/example/data/local/database/CharacterDatabase.kt
+
 package com.example.data.local.database
 
 import androidx.room.Database
@@ -7,10 +9,12 @@ import com.example.data.db.dao.LocationDao
 import com.example.data.local.converters.CharacterTypeConverters
 import com.example.data.local.dao.CharacterDao
 import com.example.data.local.dao.CharacterDetailsDao
+import com.example.data.local.dao.RMEpisodeDao
 import com.example.data.local.dao.RemoteKeyDao
 import com.example.data.local.entity.CharacterDetailsEntity
 import com.example.data.local.entity.CharacterEntity
 import com.example.data.local.entity.LocationDetailEntity
+import com.example.data.local.entity.RMEpisodeEntity
 import com.example.data.local.entity.RemoteKeyEntity
 
 /**
@@ -23,11 +27,20 @@ import com.example.data.local.entity.RemoteKeyEntity
  * @property exportSchema Если true, Room будет экспортировать схему базы данных в файл JSON.
  */
 @Database(
-    entities = [CharacterEntity::class, RemoteKeyEntity::class, CharacterDetailsEntity::class, LocationDetailEntity::class],
-    version = 11,
+    entities = [
+        CharacterEntity::class,
+        RemoteKeyEntity::class,
+        CharacterDetailsEntity::class,
+        LocationDetailEntity::class,
+        RMEpisodeEntity::class
+    ],
+    version = 14,
     exportSchema = false
 )
-@TypeConverters(CharacterTypeConverters::class)
+// Теперь мы регистрируем оба конвертера, чтобы Room знал, как их использовать.
+@TypeConverters(
+    CharacterTypeConverters::class
+)
 abstract class CharacterDatabase : RoomDatabase() {
 
     /**
@@ -35,19 +48,18 @@ abstract class CharacterDatabase : RoomDatabase() {
      * @return Экземпляр [CharacterDao].
      */
     abstract fun characterDao(): CharacterDao
-
     /**
      * Предоставляет DAO для доступа к данным удаленных ключей пагинации.
      * @return Экземпляр [RemoteKeyDao].
      */
     abstract fun remoteKeysDao(): RemoteKeyDao
-
     /**
      * Предоставляет DAO для доступа к деталям персонажей.
      * @return Экземпляр [CharacterDetailsDao].
      */
     abstract fun characterDetailsDao(): CharacterDetailsDao
 
-
     abstract fun locationDao(): LocationDao
+
+    abstract fun episodeDao(): RMEpisodeDao
 }
