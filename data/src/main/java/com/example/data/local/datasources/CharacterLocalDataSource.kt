@@ -23,7 +23,7 @@ class CharacterLocalDataSource @Inject constructor(
             status = filter.status.takeIf { it?.isNotBlank() == true },
             species = filter.species.takeIf { it?.isNotBlank() == true },
             gender = filter.gender.takeIf { it?.isNotBlank() == true },
-            type = filter.type.takeIf { it?.isNotBlank() ==true }
+            type = filter.type.takeIf { it?.isNotBlank() == true }
         )
     }
 
@@ -31,7 +31,7 @@ class CharacterLocalDataSource @Inject constructor(
         characterDao.clearAllCharacters()
     }
 
-    // --- Измененные методы для RemoteKey ---
+
     suspend fun insertRemoteKey(remoteKey: RemoteKeyEntity) {
         remoteKeysDao.insertOrReplace(remoteKey)
     }
@@ -44,7 +44,7 @@ class CharacterLocalDataSource @Inject constructor(
         remoteKeysDao.clearAllRemoteKeys()
     }
 
-    // --- ДОБАВЛЕН НОВЫЙ МЕТОД ---
+
     suspend fun getAllCharactersCount(): Int {
         return characterDao.getAllCharactersCount()
     }

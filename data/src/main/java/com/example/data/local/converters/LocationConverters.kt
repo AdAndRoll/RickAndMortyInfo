@@ -6,7 +6,6 @@ import com.google.gson.reflect.TypeToken
 
 /**
  * Преобразователи типов для Room, чтобы сохранять сложные объекты.
- * Теперь корректно работает со списком URL-адресов резидентов как со строками.
  */
 class LocationConverters {
     private val gson = Gson()

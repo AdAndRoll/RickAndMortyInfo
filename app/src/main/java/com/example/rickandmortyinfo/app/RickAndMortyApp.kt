@@ -10,6 +10,5 @@ import dagger.hilt.android.HiltAndroidApp
  */
 @HiltAndroidApp
 class RickAndMortyApp : Application() {
-    // В этом классе пока ничего дополнительного не нужно.
-    // Hilt автоматически позаботится о необходимых инициализациях.
+
 }

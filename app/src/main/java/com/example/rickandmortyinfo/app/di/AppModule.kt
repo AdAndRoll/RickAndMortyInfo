@@ -1,12 +1,7 @@
 package com.example.rickandmortyinfo.app.di
 
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.add
-
 import coil.ImageLoader
-import coil.decode.ImageDecoderDecoder
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import dagger.Module
@@ -25,11 +20,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // Здесь могут быть другие зависимости, специфичные для уровня приложения,
-    // например, SharedPreferences, Managers и т.д.
-    // Пока что, этот модуль может быть пустым, если все остальные зависимости
-    // уже покрыты Network, Database, Data и Domain модулями.
-
 
     @Provides
     @Singleton
@@ -39,17 +29,17 @@ object AppModule {
         return ImageLoader.Builder(context)
             .memoryCache {
                 MemoryCache.Builder(context)
-                    .maxSizePercent(0.25) // Использовать до 25% доступной памяти приложения
+                    .maxSizePercent(0.25)
                     .build()
             }
             .diskCache {
                 DiskCache.Builder()
-                    .directory(context.cacheDir.resolve("image_cache")) // Указать директорию для дискового кэша
-                    .maxSizeBytes(250 * 1024 * 1024) // 250 MB, например
+                    .directory(context.cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(250 * 1024 * 1024)
                     .build()
             }
-            .respectCacheHeaders(false) // Может помочь, если серверные заголовки мешают кэшированию
-            .crossfade(true) // Плавное появление изображения
+            .respectCacheHeaders(false)
+            .crossfade(true)
             .build()
     }
 }

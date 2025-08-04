@@ -4,15 +4,10 @@ import com.example.data.local.entity.CharacterDetailsEntity
 import com.example.data.local.entity.CharacterDetailsLocation
 import com.example.data.local.entity.CharacterEntity
 import com.example.data.remote.dto.CharacterDto
+import com.example.domain.model.LocationRM
 import com.example.domain.model.RMCharacter
 import com.example.domain.model.RMCharacterDetailed
-import com.example.domain.model.LocationRM
 
-
-/**
- * Маппер для преобразования DTO и Entity моделей в доменные модели и обратно.
- * Использует функции расширения для удобства.
- */
 
 /**
  * Преобразует [CharacterDto] (модель из сети) в [CharacterEntity] (модель для Room).
@@ -75,7 +70,6 @@ fun CharacterDto.toCharacterDetailed(): RMCharacterDetailed {
     )
 }
 
-// --- Новые мапперы для кэширования деталей персонажа ---
 
 /**
  * Преобразует [CharacterDto] (модель из сети) в [CharacterDetailsEntity] (модель для Room).
@@ -92,8 +86,8 @@ fun CharacterDto.toCharacterDetailsEntity(): CharacterDetailsEntity {
         gender = this.gender,
         imageUrl = this.image,
         origin = CharacterDetailsLocation(origin.name, origin.url),
-        location = CharacterDetailsLocation (location.name, location.url),
-        episodeUrls = this.episode // Теперь передаем список напрямую
+        location = CharacterDetailsLocation(location.name, location.url),
+        episodeUrls = this.episode
     )
 }
 
@@ -116,6 +110,6 @@ fun CharacterDetailsEntity.toCharacterDetailed(): RMCharacterDetailed {
         character = basicCharacter,
         origin = LocationRM(origin.name, origin.url),
         location = LocationRM(location.name, location.url),
-        episode = this.episodeUrls // Теперь получаем список напрямую
+        episode = this.episodeUrls
     )
 }

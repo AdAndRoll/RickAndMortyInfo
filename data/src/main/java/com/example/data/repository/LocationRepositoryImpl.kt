@@ -49,48 +49,48 @@ class LocationRepositoryImpl @Inject constructor(
      * или информацию об ошибке.
      */
     override fun getLocationDetails(locationId: Int): Flow<Result<LocationDetail>> = flow {
-        // Получаем данные из кэша
+
         val localDetails = locationLocalDataSource.getLocationDetails(locationId).firstOrNull()
 
         if (localDetails != null) {
-            // Если есть локальные данные, получаем объекты Resident и отправляем их.
+
             val residents = getResidents(localDetails.residents)
             emit(Result.Success(localDetails.toDomainModel(residents)))
         }
 
-        // Выполняем сетевой запрос для обновления данных
+
         when (val remoteResult = locationRemoteDataSource.getLocationDetails(locationId)) {
             is NetworkResult.Success -> {
                 val detailsEntity = remoteResult.data.toEntity()
                 locationLocalDataSource.saveLocationDetails(detailsEntity)
 
-                // Извлекаем ID из URL-адресов резидентов
+
                 val allResidentIds = detailsEntity.residents.mapNotNull { url ->
                     url.substringAfterLast("/").toIntOrNull()
                 }
 
-                // Разделяем список ID на две части: первые 30 и остальные
+
                 val idsToFetchInitially = allResidentIds.take(30)
                 val remainingIds = allResidentIds.drop(30)
 
-                // Запускаем асинхронную загрузку первых 30 резидентов и ждем ее завершения.
-                // Это решает проблему состояния гонки, когда данные читаются до того, как они были сохранены.
+
                 fetchAndSaveCharacters(idsToFetchInitially)
 
-                // После того, как первые 30 персонажей загружены, получаем их данные из кэша.
+
                 val initialResidents = getResidents(detailsEntity.residents.take(30))
-                // Отправляем на экран локацию с частичным, но уже заполненным списком Resident.
+
                 emit(Result.Success(detailsEntity.toDomainModel(initialResidents)))
 
-                // Запускаем фоновую загрузку оставшихся резидентов, не дожидаясь ее.
+
                 coroutineScope {
                     launch {
                         fetchAndSaveCharacters(remainingIds)
                     }
                 }
             }
+
             is NetworkResult.Error -> {
-                // Если нет локальных данных, отправляем ошибку.
+
                 if (localDetails == null) {
                     emit(Result.Error(remoteResult.exception))
                 }
@@ -109,9 +109,9 @@ class LocationRepositoryImpl @Inject constructor(
         return residentUrls.mapNotNull { url ->
             val characterId = url.substringAfterLast("/").toIntOrNull()
             if (characterId != null) {
-                // Ищем персонажа в локальной БД.
+
                 val characterEntity = characterDetailsDao.getCharacterDetailsById(characterId)
-                // Если найден, создаем объект Resident с его ID и именем.
+
                 characterEntity?.let { Resident(id = it.id, name = it.name) }
             } else {
                 null
@@ -128,12 +128,12 @@ class LocationRepositoryImpl @Inject constructor(
     private suspend fun fetchAndSaveCharacters(characterIds: List<Int>) {
         if (characterIds.isEmpty()) return
 
-        // Логика выбора метода API на основе количества ID
+
         val remoteResult = if (characterIds.size == 1) {
-            // Запрашиваем одного персонажа
+
             characterRemoteDataSource.getCharacterById(characterIds.first())
         } else {
-            // Запрашиваем список персонажей
+
             characterRemoteDataSource.getCharactersByIds(characterIds)
         }
 
@@ -148,8 +148,9 @@ class LocationRepositoryImpl @Inject constructor(
                 val characterEntities = characters.map { it.toCharacterDetailsEntity() }
                 characterEntities.forEach { characterDetailsDao.insertCharacterDetails(it) }
             }
+
             is NetworkResult.Error -> {
-                // Обработка ошибки загрузки, например, логирование
+
                 println("Error fetching characters with IDs $characterIds: ${remoteResult.exception.message}")
             }
         }

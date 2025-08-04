@@ -5,20 +5,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.example.domain.model.RMCharacter
 import com.example.domain.model.CharacterFilter
+import com.example.domain.model.RMCharacter
 import com.example.domain.repository.CharacterRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.async
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,15 +28,11 @@ class CharactersViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    // MutableStateFlow для хранения текущего фильтра
     private val _characterFilter = MutableStateFlow(CharacterFilter())
     val characterFilter: StateFlow<CharacterFilter> = _characterFilter.asStateFlow()
 
-    // Поток PagingData, который автоматически обновляется при изменении фильтра
     val characters: Flow<PagingData<RMCharacter>> = _characterFilter
         .flatMapLatest { filter ->
-            // При каждом изменении фильтра, Paging Library автоматически
-            // перезапускает этот Flow и получает новые данные из репозитория
             characterRepository.getCharacters(filter)
         }
         .cachedIn(viewModelScope)
@@ -45,8 +41,6 @@ class CharactersViewModel @Inject constructor(
      * Этот метод вызывается из UI для применения новых фильтров.
      */
     fun onFilterApplied(newFilter: CharacterFilter) {
-        // Обновляем StateFlow с фильтрами. Это автоматически
-        // запустит новый запрос на получение данных через flatMapLatest.
         _characterFilter.value = newFilter
     }
 
@@ -55,7 +49,6 @@ class CharactersViewModel @Inject constructor(
      * Эту функцию следует вызывать, когда первая порция данных Paging доступна.
      */
     fun preloadImagesForCharacters(charactersToPreload: List<RMCharacter>) {
-        // Добавляем проверку, чтобы не запускать предзагрузку дважды
         if (charactersToPreload.isEmpty()) {
             return
         }
@@ -75,7 +68,6 @@ class CharactersViewModel @Inject constructor(
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            // Логирование ошибки предзагрузки
                         }
                     }
                 }
@@ -84,7 +76,6 @@ class CharactersViewModel @Inject constructor(
         }
     }
 
-    // Вспомогательная функция для awaitAll, которая не падает из-за одного исключения
     private suspend fun <T> List<Deferred<T>>.awaitAllSafely(): List<Result<T>> {
         val results = mutableListOf<Result<T>>()
         forEach { deferred ->

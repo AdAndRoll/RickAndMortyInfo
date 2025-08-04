@@ -32,18 +32,17 @@ fun EpisodeList(episodes: List<String>) {
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        // Используем LazyColumn для эффективного отображения длинных списков.
+
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
         ) {
             items(episodes) { episodeUrl ->
-                // Используем Card для стильного отображения каждого элемента списка.
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                 ) {
-                    // Извлекаем номер эпизода из URL, например "https://.../episode/1" -> "1".
                     val episodeNumber = episodeUrl.substringAfterLast("/")
                     Row(
                         modifier = Modifier

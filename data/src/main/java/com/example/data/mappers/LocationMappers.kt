@@ -9,9 +9,6 @@ import com.example.domain.model.Resident // Импортируем новый к
  * Расширение для преобразования сетевой модели [LocationRemoteResponse]
  * в сущность базы данных [LocationDetailEntity].
  *
- * Эта функция остается неизменной, так как сущность БД по-прежнему
- * хранит только URL-адреса, а не детали жителей.
- *
  * @return Объект [LocationDetailEntity], готовый к сохранению в базе данных Room.
  */
 fun LocationRemoteResponse.toEntity(): LocationDetailEntity {
@@ -20,7 +17,7 @@ fun LocationRemoteResponse.toEntity(): LocationDetailEntity {
         name = this.name,
         type = this.type,
         dimension = this.dimension,
-        residents = this.residents, // Сохраняем список URL-адресов резидентов
+        residents = this.residents,
         url = this.url,
         created = this.created
     )
@@ -29,9 +26,6 @@ fun LocationRemoteResponse.toEntity(): LocationDetailEntity {
 /**
  * Расширение для преобразования сущности базы данных [LocationDetailEntity]
  * в доменную модель [LocationDetail].
- *
- * Теперь в качестве параметра принимается список готовых объектов [Resident],
- * а не просто список имен. Это позволяет передать ID вместе с именем.
  *
  * @param residents Список объектов [Resident], содержащих ID и имя.
  * @return Объект [LocationDetail] для использования в UI.
@@ -42,16 +36,13 @@ fun LocationDetailEntity.toDomainModel(residents: List<Resident>): LocationDetai
         name = this.name,
         type = this.type,
         dimension = this.dimension,
-        residents = residents // Передаем список объектов Resident
+        residents = residents
     )
 }
 
 /**
  * Расширение для прямого преобразования сетевой модели [LocationRemoteResponse]
  * в доменную модель [LocationDetail].
- *
- * Как и в случае с сущностью БД, теперь в качестве параметра принимается
- * список готовых объектов [Resident].
  *
  * @param residents Список объектов [Resident], содержащих ID и имя.
  * @return Объект [LocationDetail] для использования в слоях UI и бизнес-логики.

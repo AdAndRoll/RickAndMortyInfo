@@ -32,8 +32,7 @@ fun CharacterItem(
     modifier: Modifier = Modifier
 ) {
     Card(
-        // Используем fillMaxWidth, чтобы макеты в LazyVerticalGrid
-        // всегда были одинаковой ширины.
+
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -45,20 +44,15 @@ fun CharacterItem(
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(imageUrl)
-                    .crossfade(true) // Плавное появление
-                    // .placeholder(R.drawable.placeholder_image) // Ваш плейсхолдер
-                    // .error(R.drawable.error_image) // Изображение при ошибке
-                    .diskCacheKey(imageUrl) // Явное указание ключа для дискового кэша (обычно Coil делает это сам)
-                    .memoryCacheKey(imageUrl) // Явное указание ключа для кэша в памяти
+                    .crossfade(true)
+                    .diskCacheKey(imageUrl)
+                    .memoryCacheKey(imageUrl)
                     .build(),
                 contentDescription = "Изображение персонажа $name",
                 modifier = Modifier
                     .fillMaxWidth()
-                    // !!! Ключевое изменение: задаем фиксированное соотношение сторон
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(4.dp)),
-                // !!! Ключевое изменение: используем ContentScale.Crop, чтобы
-                // изображение всегда заполняло доступное пространство
                 contentScale = ContentScale.Crop,
                 placeholder = painterResource(id = R.drawable.ic_placeholder),
                 error = painterResource(id = R.drawable.ic_error)

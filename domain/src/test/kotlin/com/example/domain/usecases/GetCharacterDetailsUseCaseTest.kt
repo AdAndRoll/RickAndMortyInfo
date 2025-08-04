@@ -30,39 +30,42 @@ class GetCharacterDetailsUseCaseTest {
     }
 
     @Test
-    fun `when repository returns success, use case should return success with character details`() = runTest {
-        // Создаем моковые данные для успешного сценария
-        val characterId = 1
-        val mockCharacter = RMCharacter(
-            id = 1,
-            name = "Rick Sanchez",
-            species = "Human",
-            type = "",
-            status = "Alive",
-            gender = "Male",
-            imageUrl = "url"
-        )
-        val mockOrigin = LocationRM(name = "Earth (C-137)", url = "url")
-        val mockLocation = LocationRM(name = "Citadel of Ricks", url = "url")
-        val mockCharacterDetailed = RMCharacterDetailed(
-            character = mockCharacter,
-            origin = mockOrigin,
-            location = mockLocation,
-            episode = listOf("url1", "url2")
-        )
+    fun `when repository returns success, use case should return success with character details`() =
+        runTest {
+            // Создаем моковые данные для успешного сценария
+            val characterId = 1
+            val mockCharacter = RMCharacter(
+                id = 1,
+                name = "Rick Sanchez",
+                species = "Human",
+                type = "",
+                status = "Alive",
+                gender = "Male",
+                imageUrl = "url"
+            )
+            val mockOrigin = LocationRM(name = "Earth (C-137)", url = "url")
+            val mockLocation = LocationRM(name = "Citadel of Ricks", url = "url")
+            val mockCharacterDetailed = RMCharacterDetailed(
+                character = mockCharacter,
+                origin = mockOrigin,
+                location = mockLocation,
+                episode = listOf("url1", "url2")
+            )
 
-        // Настраиваем поведение mock-репозитория
-        coEvery { mockCharacterRepository.getCharacterDetails(characterId) } returns Result.Success(mockCharacterDetailed)
+            // Настраиваем поведение mock-репозитория
+            coEvery { mockCharacterRepository.getCharacterDetails(characterId) } returns Result.Success(
+                mockCharacterDetailed
+            )
 
-        // Выполняем use case
-        val result = getCharacterDetailsUseCase.execute(characterId)
+            // Выполняем use case
+            val result = getCharacterDetailsUseCase.execute(characterId)
 
-        // Проверяем, что результат — это Success и содержит правильные данные
-        assertEquals(Result.Success(mockCharacterDetailed), result)
+            // Проверяем, что результат — это Success и содержит правильные данные
+            assertEquals(Result.Success(mockCharacterDetailed), result)
 
-        // Проверяем, что метод репозитория был вызван ровно один раз
-        coVerify(exactly = 1) { mockCharacterRepository.getCharacterDetails(characterId) }
-    }
+            // Проверяем, что метод репозитория был вызван ровно один раз
+            coVerify(exactly = 1) { mockCharacterRepository.getCharacterDetails(characterId) }
+        }
 
     @Test
     fun `when repository returns error, use case should return error`() = runTest {
@@ -71,7 +74,9 @@ class GetCharacterDetailsUseCaseTest {
         val expectedError = IOException("Network error")
 
         // Настраиваем поведение mock-репозитория для возврата ошибки
-        coEvery { mockCharacterRepository.getCharacterDetails(characterId) } returns Result.Error(expectedError)
+        coEvery { mockCharacterRepository.getCharacterDetails(characterId) } returns Result.Error(
+            expectedError
+        )
 
         // Выполняем use case
         val result = getCharacterDetailsUseCase.execute(characterId)

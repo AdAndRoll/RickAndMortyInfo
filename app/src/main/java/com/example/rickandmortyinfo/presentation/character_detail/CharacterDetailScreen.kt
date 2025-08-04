@@ -1,4 +1,4 @@
-package com.example.presentation.screens
+package com.example.rickandmortyinfo.presentation.character_detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,8 +41,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.domain.model.RMCharacter
 import com.example.domain.model.RMCharacterDetailed
-import com.example.rickandmortyinfo.presentation.character_detail.CharacterDetailState
-import com.example.rickandmortyinfo.presentation.character_detail.CharacterDetailViewModel
 
 import com.example.rickandmortyinfo.presentation.character_detail.components.DetailText
 
@@ -64,7 +62,7 @@ fun CharacterDetailScreen(
     onBackClick: () -> Unit,
     onCloseClick: () -> Unit,
     onLocationClick: (Int) -> Unit,
-    onFilterClick: (String, String) -> Unit, // Новый параметр
+    onFilterClick: (String, String) -> Unit,
     viewModel: CharacterDetailViewModel = hiltViewModel()
 ) {
     LaunchedEffect(key1 = characterId) {
@@ -74,7 +72,6 @@ fun CharacterDetailScreen(
     val state by viewModel.characterDetailState.collectAsState()
 
     Scaffold(
-        // Делаем фон Scaffold прозрачным, чтобы видеть фоновое изображение
         containerColor = Color.Transparent,
         topBar = {
             CenterAlignedTopAppBar(
@@ -100,7 +97,6 @@ fun CharacterDetailScreen(
                         )
                     }
                 },
-                // Делаем TopAppBar менее прозрачным
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
                 )
@@ -118,19 +114,18 @@ fun CharacterDetailScreen(
                     CircularProgressIndicator()
                 }
             }
+
             is CharacterDetailState.Success -> {
                 val characterDetails: RMCharacterDetailed = currentState.character
                 val character: RMCharacter = characterDetails.character
                 val origin = characterDetails.origin
                 val location = characterDetails.location
 
-                // Оборачиваем весь контент в полностью непрозрачную Card для лучшей читаемости
                 Card(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
                         .padding(16.dp),
-                    // Используем полностью непрозрачный белый цвет для фона карточки
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     LazyColumn(
@@ -141,7 +136,10 @@ fun CharacterDetailScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         item {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                                 AsyncImage(
                                     model = character.imageUrl,
                                     contentDescription = "Изображение ${character.name}",
@@ -160,7 +158,6 @@ fun CharacterDetailScreen(
                             }
                         }
 
-                        // Теперь эти элементы кликабельны и вызывают onFilterClick
                         item {
                             DetailText(
                                 label = "Статус",
@@ -196,14 +193,14 @@ fun CharacterDetailScreen(
                             )
                         }
 
-                        // Детали происхождения и последней локации
                         item {
                             DetailText(
                                 label = "Происхождение",
                                 value = origin.name,
                                 onClick = {
                                     if (origin.url.isNotBlank()) {
-                                        val locationId = origin.url.substringAfterLast("/").toIntOrNull()
+                                        val locationId =
+                                            origin.url.substringAfterLast("/").toIntOrNull()
                                         if (locationId != null) onLocationClick(locationId)
                                     }
                                 }
@@ -215,7 +212,8 @@ fun CharacterDetailScreen(
                                 value = location.name,
                                 onClick = {
                                     if (location.url.isNotBlank()) {
-                                        val locationId = location.url.substringAfterLast("/").toIntOrNull()
+                                        val locationId =
+                                            location.url.substringAfterLast("/").toIntOrNull()
                                         if (locationId != null) onLocationClick(locationId)
                                     }
                                 }
@@ -260,6 +258,7 @@ fun CharacterDetailScreen(
                     }
                 }
             }
+
             is CharacterDetailState.Error -> {
                 Box(
                     modifier = Modifier

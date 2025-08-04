@@ -7,7 +7,6 @@ import com.example.domain.utils.Result
 /**
  * Use case для получения детальной информации об одном персонаже.
  * Инкапсулирует логику получения данных, делая ViewModel более чистым.
- *
  * @param characterRepository Репозиторий, предоставляющий доступ к данным.
  */
 class GetCharacterDetailsUseCase constructor(

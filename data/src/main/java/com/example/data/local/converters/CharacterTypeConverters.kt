@@ -20,9 +20,9 @@ class CharacterTypeConverters(private val gson: Gson) {
      */
     @TypeConverter
     fun fromStringList(value: String): List<String> {
-        // Определяем тип для Gson
+
         val listType = object : TypeToken<List<String>>() {}.type
-        // Преобразуем JSON-строку обратно в список
+
         return gson.fromJson(value, listType)
     }
 
@@ -34,7 +34,7 @@ class CharacterTypeConverters(private val gson: Gson) {
      */
     @TypeConverter
     fun toStringList(list: List<String>): String {
-        // Преобразуем список в JSON-строку
+
         return gson.toJson(list)
     }
 }

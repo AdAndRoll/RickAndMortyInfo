@@ -9,7 +9,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 

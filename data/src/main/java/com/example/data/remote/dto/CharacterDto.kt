@@ -1,7 +1,6 @@
 package com.example.data.remote.dto
 
 
-
 /**
  * DTO (Data Transfer Object) для одного персонажа, полученного из API.
  * Содержит все поля, которые приходят в ответе API для одного персонажа.

@@ -1,8 +1,7 @@
 package com.example.data.remote.api
 
-import com.example.data.remote.dto.CharactersResponse
 import com.example.data.remote.dto.CharacterDto
-import com.example.data.remote.dto.LocationRemoteResponse
+import com.example.data.remote.dto.CharactersResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query

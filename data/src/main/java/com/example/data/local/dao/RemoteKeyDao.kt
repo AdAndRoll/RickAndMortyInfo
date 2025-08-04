@@ -31,6 +31,4 @@ interface RemoteKeyDao {
     @Query("DELETE FROM remote_keys")
     suspend fun clearAllRemoteKeys()
 
-    // !!! ИЗМЕНЕНИЕ: Убран метод getCreationTime(), так как
-    // время создания теперь доступно через getRemoteKey().
 }

@@ -64,7 +64,6 @@ fun LocationDetailScreen(
     val state by viewModel.locationDetailState.collectAsState()
 
     Scaffold(
-        // Делаем фон Scaffold прозрачным, чтобы видеть фоновое изображение
         containerColor = Color.Transparent,
         topBar = {
             CenterAlignedTopAppBar(
@@ -74,7 +73,6 @@ fun LocationDetailScreen(
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
-                // Кнопка "назад" слева
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -83,7 +81,6 @@ fun LocationDetailScreen(
                         )
                     }
                 },
-                // Кнопка "закрыть" справа
                 actions = {
                     IconButton(onClick = onCloseClick) {
                         Icon(
@@ -92,7 +89,6 @@ fun LocationDetailScreen(
                         )
                     }
                 },
-                // Делаем TopAppBar менее прозрачным
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
                 )
@@ -110,16 +106,15 @@ fun LocationDetailScreen(
                     CircularProgressIndicator()
                 }
             }
+
             is LocationDetailState.Success -> {
                 val location: LocationDetail = currentState.location
 
-                // Оборачиваем весь контент в полностью непрозрачную Card для лучшей читаемости
                 Card(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
                         .padding(16.dp),
-                    // Используем полностью непрозрачный белый цвет для фона карточки
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     LazyColumn(
@@ -180,6 +175,7 @@ fun LocationDetailScreen(
                     }
                 }
             }
+
             is LocationDetailState.Error -> {
                 Box(
                     modifier = Modifier

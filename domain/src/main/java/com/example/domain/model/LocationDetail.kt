@@ -15,6 +15,5 @@ data class LocationDetail(
     val name: String,
     val type: String,
     val dimension: String,
-    // Изменен тип списка, чтобы хранить и ID, и имя
     val residents: List<Resident>
 )

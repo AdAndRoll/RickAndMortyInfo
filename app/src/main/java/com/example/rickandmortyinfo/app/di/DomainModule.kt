@@ -37,12 +37,11 @@ object DomainModule {
      * который будет предоставлен из DataModule (или другого соответствующего модуля).
      */
     @Provides
-    @Singleton // Или @ViewModelScoped, если установлен в ViewModelComponent
+    @Singleton
     fun provideGetCharacterDetailsUseCase(
-        repository: CharacterRepository // Предполагается, что он также зависит от CharacterRepository
-        // Если у него другие зависимости, укажите их здесь
+        repository: CharacterRepository
     ): GetCharacterDetailsUseCase {
-        return GetCharacterDetailsUseCase(repository) // Создаем экземпляр
+        return GetCharacterDetailsUseCase(repository)
     }
 
     /**

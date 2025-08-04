@@ -23,8 +23,8 @@ import com.example.data.local.entity.RemoteKeyEntity
  * @property exportSchema Если true, Room будет экспортировать схему базы данных в файл JSON.
  */
 @Database(
-    entities = [CharacterEntity::class, RemoteKeyEntity::class, CharacterDetailsEntity::class, LocationDetailEntity::class ],
-    version =11,
+    entities = [CharacterEntity::class, RemoteKeyEntity::class, CharacterDetailsEntity::class, LocationDetailEntity::class],
+    version = 11,
     exportSchema = false
 )
 @TypeConverters(CharacterTypeConverters::class)
@@ -48,6 +48,6 @@ abstract class CharacterDatabase : RoomDatabase() {
      */
     abstract fun characterDetailsDao(): CharacterDetailsDao
 
-    // Добавляем абстрактный метод для получения DAO локаций
+
     abstract fun locationDao(): LocationDao
 }

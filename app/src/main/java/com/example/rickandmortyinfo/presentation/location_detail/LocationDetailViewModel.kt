@@ -21,7 +21,8 @@ class LocationDetailViewModel @Inject constructor(
     private val getLocationDetailsUseCase: GetLocationDetailsUseCase
 ) : ViewModel() {
 
-    private val _locationDetailState = MutableStateFlow<LocationDetailState>(LocationDetailState.Loading)
+    private val _locationDetailState =
+        MutableStateFlow<LocationDetailState>(LocationDetailState.Loading)
     val locationDetailState: StateFlow<LocationDetailState> = _locationDetailState
 
     /**
@@ -31,17 +32,17 @@ class LocationDetailViewModel @Inject constructor(
      */
     fun loadLocationDetails(locationId: Int) {
         viewModelScope.launch {
-            // Устанавливаем состояние загрузки
+
             _locationDetailState.value = LocationDetailState.Loading
 
-            // Собираем данные из потока (Flow), который возвращает Use Case
-            // Используем метод execute, как вы и указали.
+
             getLocationDetailsUseCase.execute(locationId).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        // Используем ваш класс LocationDetail для представления данных
+
                         _locationDetailState.value = LocationDetailState.Success(result.data)
                     }
+
                     is Result.Error -> {
                         _locationDetailState.value = LocationDetailState.Error(
                             result.exception.message ?: "Unknown error"

@@ -10,13 +10,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color // Добавили импорт Color
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
@@ -33,20 +42,16 @@ import kotlinx.coroutines.launch
 @Composable
 fun CharacterListScreen(
     onCharacterClick: (Int) -> Unit,
-    // Добавлены параметры для получения фильтров из навигации
     initialStatusFilter: String?,
     initialGenderFilter: String?,
     initialTypeFilter: String?,
     viewModel: CharactersViewModel = hiltViewModel()
 ) {
-    // Используем LaunchedEffect, чтобы при первой композиции экрана применить фильтры,
-    // переданные через навигацию.
     LaunchedEffect(
         key1 = initialStatusFilter,
         key2 = initialGenderFilter,
         key3 = initialTypeFilter
     ) {
-        // Создаем новый объект фильтра, если хотя бы один из параметров не пустой.
         if (!initialStatusFilter.isNullOrEmpty() ||
             !initialGenderFilter.isNullOrEmpty() ||
             !initialTypeFilter.isNullOrEmpty()
@@ -71,7 +76,6 @@ fun CharacterListScreen(
     )
 
     Scaffold(
-        // Изменили цвет контейнера на прозрачный
         containerColor = Color.Transparent,
         topBar = {
             CharacterListToolbar(
@@ -120,22 +124,28 @@ fun CharacterListScreen(
                             is LoadState.Loading -> {
                                 item(span = { GridItemSpan(maxLineSpan) }) {
                                     Box(
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         CircularProgressIndicator()
                                     }
                                 }
                             }
+
                             is LoadState.Error -> {
                                 val error = loadState.append as LoadState.Error
                                 item(span = { GridItemSpan(maxLineSpan) }) {
                                     Text(
                                         text = "Ошибка загрузки: ${error.error.localizedMessage ?: "Неизвестная ошибка"}",
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp)
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
                                     )
                                 }
                             }
+
                             else -> {}
                         }
                     }
@@ -144,6 +154,7 @@ fun CharacterListScreen(
                         loadState.refresh is LoadState.Loading -> {
                             CircularProgressIndicator()
                         }
+
                         loadState.refresh is LoadState.Error -> {
                             val error = loadState.refresh as LoadState.Error
                             Text(
@@ -151,6 +162,7 @@ fun CharacterListScreen(
                                 modifier = Modifier.padding(16.dp)
                             )
                         }
+
                         loadState.refresh is LoadState.NotLoading &&
                                 loadState.append.endOfPaginationReached &&
                                 characters.itemCount == 0 -> {
@@ -159,6 +171,7 @@ fun CharacterListScreen(
                                 modifier = Modifier.padding(16.dp)
                             )
                         }
+
                         else -> {}
                     }
                 }

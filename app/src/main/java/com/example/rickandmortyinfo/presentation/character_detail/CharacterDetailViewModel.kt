@@ -23,7 +23,8 @@ class CharacterDetailViewModel @Inject constructor(
     private val getCharacterDetailsUseCase: GetCharacterDetailsUseCase
 ) : ViewModel() {
 
-    private val _characterDetailState = MutableStateFlow<CharacterDetailState>(CharacterDetailState.Loading)
+    private val _characterDetailState =
+        MutableStateFlow<CharacterDetailState>(CharacterDetailState.Loading)
     val characterDetailState: StateFlow<CharacterDetailState> = _characterDetailState
 
     /**
@@ -38,8 +39,10 @@ class CharacterDetailViewModel @Inject constructor(
                 is Result.Success -> {
                     _characterDetailState.value = CharacterDetailState.Success(result.data)
                 }
+
                 is Result.Error -> {
-                    _characterDetailState.value = CharacterDetailState.Error(result.exception.message ?: "Unknown error")
+                    _characterDetailState.value =
+                        CharacterDetailState.Error(result.exception.message ?: "Unknown error")
                 }
             }
         }

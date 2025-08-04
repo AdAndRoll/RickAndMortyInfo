@@ -6,7 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.presentation.screens.CharacterDetailScreen
+import com.example.rickandmortyinfo.presentation.character_detail.CharacterDetailScreen
 import com.example.rickandmortyinfo.presentation.character_list.CharacterListScreen
 import com.example.rickandmortyinfo.presentation.location_detail.LocationDetailScreen
 
@@ -18,7 +18,6 @@ fun RickAndMortyNavHost() {
         navController = navController,
         startDestination = "character_list"
     ) {
-        // Экран со списком персонажей теперь принимает необязательные аргументы для фильтрации.
         composable(
             route = "character_list?status={status}&gender={gender}&type={type}",
             arguments = listOf(
@@ -39,7 +38,6 @@ fun RickAndMortyNavHost() {
                 }
             )
         ) { backStackEntry ->
-            // Получаем значения фильтров из аргументов навигации
             val statusFilter = backStackEntry.arguments?.getString("status")
             val genderFilter = backStackEntry.arguments?.getString("gender")
             val typeFilter = backStackEntry.arguments?.getString("type")
@@ -48,14 +46,12 @@ fun RickAndMortyNavHost() {
                 onCharacterClick = { characterId ->
                     navController.navigate("character_detail/$characterId")
                 },
-                // Передаем полученные фильтры на экран списка персонажей.
                 initialStatusFilter = statusFilter,
                 initialGenderFilter = genderFilter,
                 initialTypeFilter = typeFilter
             )
         }
 
-        // Экран с деталями персонажа
         composable(
             route = "character_detail/{characterId}",
             arguments = listOf(navArgument("characterId") { type = NavType.IntType })
@@ -72,9 +68,7 @@ fun RickAndMortyNavHost() {
                 onLocationClick = { locationId ->
                     navController.navigate("location_detail/$locationId")
                 },
-                // Новый колбэк для навигации с фильтром
                 onFilterClick = { filterType, filterValue ->
-                    // Формируем маршрут на основе типа фильтра и значения
                     val route = when (filterType) {
                         "status" -> "character_list?status=$filterValue"
                         "gender" -> "character_list?gender=$filterValue"
@@ -86,7 +80,6 @@ fun RickAndMortyNavHost() {
             )
         }
 
-        // Экран с деталями локации
         composable(
             route = "location_detail/{locationId}",
             arguments = listOf(navArgument("locationId") { type = NavType.IntType })

@@ -14,26 +14,21 @@ import com.example.data.mappers.toCharacterEntity
 import com.example.data.remote.datasources.CharacterRemoteDataSource
 import com.example.data.utils.NetworkResult
 import com.example.domain.model.CharacterFilter
+import retrofit2.HttpException
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import retrofit2.HttpException
 
 @OptIn(ExperimentalPagingApi::class)
 class CharacterRemoteMediator(
     private val characterRemoteDataSource: CharacterRemoteDataSource,
     private val characterLocalDataSource: CharacterLocalDataSource,
     private val characterDatabase: CharacterDatabase,
-    // !!! ИЗМЕНЕНИЕ: Filter теперь является частью RemoteMediator
     private val filter: CharacterFilter
 ) : RemoteMediator<Int, CharacterEntity>() {
 
     private val CACHE_TIMEOUT = TimeUnit.MINUTES.toMillis(30)
     private val TAG = "CharacterRemoteMediator"
 
-    /**
-     * Эта функция теперь проверяет не только время, но и целостность данных
-     * и совпадение фильтров.
-     */
     override suspend fun initialize(): InitializeAction {
         val remoteKey = characterLocalDataSource.getRemoteKey()
         val lastUpdateTime = remoteKey?.createdAt ?: 0L
@@ -42,22 +37,30 @@ class CharacterRemoteMediator(
         val isCacheOutdated = now - lastUpdateTime >= CACHE_TIMEOUT
         val isCacheInconsistent = lastUpdateTime > 0 && characterCount == 0
 
-        // !!! КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Проверяем, изменился ли фильтр
         val isFilterChanged = remoteKey?.let {
             it.filterName != filter.name ||
                     it.filterStatus != filter.status ||
                     it.filterSpecies != filter.species ||
-                    it.filterType != filter.type ||    // <--- ДОБАВИТЬ ПРОВЕРКУ ДЛЯ TYPE
+                    it.filterType != filter.type ||
                     it.filterGender != filter.gender
         } ?: false
 
-        Log.d(TAG, "Checking cache integrity. Last update: $lastUpdateTime, character count: $characterCount")
-        Log.d(TAG, "Is cache outdated: $isCacheOutdated, Is cache inconsistent: $isCacheInconsistent")
+        Log.d(
+            TAG,
+            "Checking cache integrity. Last update: $lastUpdateTime, character count: $characterCount"
+        )
+        Log.d(
+            TAG,
+            "Is cache outdated: $isCacheOutdated, Is cache inconsistent: $isCacheInconsistent"
+        )
         Log.d(TAG, "Is filter changed: $isFilterChanged")
 
 
         return if (isCacheOutdated || isCacheInconsistent || isFilterChanged) {
-            Log.d(TAG, "Cache is outdated, inconsistent, or filter has changed. Launching initial REFRESH.")
+            Log.d(
+                TAG,
+                "Cache is outdated, inconsistent, or filter has changed. Launching initial REFRESH."
+            )
             InitializeAction.LAUNCH_INITIAL_REFRESH
         } else {
             Log.d(TAG, "Cache is fresh and consistent. Skipping initial REFRESH.")
@@ -77,10 +80,12 @@ class CharacterRemoteMediator(
                     Log.d(TAG, "LoadType: REFRESH. Starting from page 1.")
                     currentPage = 1
                 }
+
                 LoadType.PREPEND -> {
                     Log.d(TAG, "LoadType: PREPEND. End of pagination reached.")
                     return MediatorResult.Success(endOfPaginationReached = true)
                 }
+
                 LoadType.APPEND -> {
                     val remoteKey = characterLocalDataSource.getRemoteKey()
                     val nextKey = remoteKey?.nextKey
@@ -115,7 +120,6 @@ class CharacterRemoteMediator(
 
                     characterDatabase.withTransaction {
                         if (loadType == LoadType.REFRESH) {
-                            // !!! КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Очищаем базу данных при смене фильтра
                             characterLocalDataSource.clearAllCharacters()
                             characterLocalDataSource.clearAllRemoteKeys()
                             Log.d(TAG, "DB cleared for REFRESH due to filter change.")
@@ -126,7 +130,6 @@ class CharacterRemoteMediator(
                             prevKey = if (currentPage == 1) null else currentPage - 1,
                             nextKey = if (endOfPaginationReached) null else currentPage + 1,
                             createdAt = System.currentTimeMillis(),
-                            // !!! НОВЫЕ ПОЛЯ: Сохраняем фильтр в RemoteKeyEntity
                             filterName = filter.name,
                             filterStatus = filter.status,
                             filterSpecies = filter.species,
@@ -139,8 +142,12 @@ class CharacterRemoteMediator(
                     }
                     Log.d(TAG, "Returning success. End of pagination: $endOfPaginationReached")
                 }
+
                 is NetworkResult.Error -> {
-                    Log.e(TAG, "API request failed with error: ${apiResult.exception.localizedMessage}")
+                    Log.e(
+                        TAG,
+                        "API request failed with error: ${apiResult.exception.localizedMessage}"
+                    )
                     return MediatorResult.Error(apiResult.exception)
                 }
             }

@@ -1,7 +1,9 @@
 package com.example.data.repository
 
+import android.util.Log
 import androidx.paging.ExperimentalPagingApi
-import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import androidx.paging.testing.asSnapshot
 import com.example.data.local.database.CharacterDatabase
 import com.example.data.local.datasources.CharacterDetailsLocalDataSource
@@ -9,6 +11,7 @@ import com.example.data.local.datasources.CharacterLocalDataSource
 import com.example.data.local.entity.CharacterDetailsEntity
 import com.example.data.local.entity.CharacterDetailsLocation
 import com.example.data.local.entity.CharacterEntity
+import com.example.data.local.entity.RemoteKeyEntity
 import com.example.data.mappers.toCharacter
 import com.example.data.mappers.toCharacterDetailed
 import com.example.data.remote.datasources.CharacterRemoteDataSource
@@ -17,21 +20,15 @@ import com.example.data.remote.dto.LocationDto
 import com.example.data.utils.NetworkResult
 import com.example.domain.model.CharacterFilter
 import com.example.domain.model.RMCharacter
-import com.example.domain.model.RMCharacterDetailed
 import com.example.domain.utils.Result
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
-import io.mockk.coVerify
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import android.util.Log
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
-import com.example.data.local.entity.RemoteKeyEntity
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -46,11 +43,10 @@ class CharacterRepositoryImplTest {
 
     @BeforeEach
     fun setUp() {
-        // Мокинг android.util.Log
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
-        every { Log.e(any(), any()) } returns 0 // Мок для Log.e(tag, message)
-        every { Log.e(any(), any(), any()) } returns 0 // Мок для Log.e(tag, message, throwable)
+        every { Log.e(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
 
         remoteDataSource = mockk(relaxed = true)
         localDataSource = mockk(relaxed = true)
@@ -75,18 +71,19 @@ class CharacterRepositoryImplTest {
         )
         val expectedCharacter = characterEntity.toCharacter()
 
-        // Создаем PagingSource, который возвращает наши тестовые данные
+
         val testPagingSource = object : PagingSource<Int, CharacterEntity>() {
             override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CharacterEntity> {
-                // Возвращаем страницу с нашими тестовыми данными
+
                 return LoadResult.Page(
                     data = listOf(characterEntity),
                     prevKey = null,
-                    nextKey = null // Указываем null, если это единственная страница
+                    nextKey = null
                 )
             }
+
             override fun getRefreshKey(state: PagingState<Int, CharacterEntity>): Int? {
-                // Стандартная реализация для getRefreshKey
+
                 return state.anchorPosition?.let { anchorPosition ->
                     state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
                         ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
@@ -94,18 +91,15 @@ class CharacterRepositoryImplTest {
             }
         }
 
-        // Здесь используется mockLocalDataSource, который должен быть членом класса теста
-        // и инициализирован в setUp()
+
         every { localDataSource.getCharactersPagingSource(filter) } returns testPagingSource
 
-        // Настраиваем моки для RemoteMediator, чтобы он не вмешивался (если он есть в Pager)
-        // Предполагаем, что для этого теста мы хотим, чтобы initialize() вернул SKIP_INITIAL_REFRESH
+
         val freshRemoteKey = RemoteKeyEntity(
-            id = 0, // или любое подходящее ID
+            id = 0,
             prevKey = null,
-            nextKey = null, // или какой-то nextKey, если данные не "полные"
-            createdAt = System.currentTimeMillis(), // Свежая временная метка
-            // Заполните поля фильтра в RemoteKeyEntity, чтобы они соответствовали 'filter'
+            nextKey = null,
+            createdAt = System.currentTimeMillis(),
             filterName = filter.name,
             filterStatus = filter.status,
             filterSpecies = filter.species,
@@ -113,36 +107,35 @@ class CharacterRepositoryImplTest {
             filterGender = filter.gender
         )
         coEvery { localDataSource.getRemoteKey() } returns freshRemoteKey
-        coEvery { localDataSource.getAllCharactersCount() } returns 1 // Указываем, что данные в кеше есть
+        coEvery { localDataSource.getAllCharactersCount() } returns 1
 
-        // Act
+
         val flow = repository.getCharacters(filter)
-        // Собираем данные из PagingData. Лямбда здесь не нужна, asSnapshot сам соберет всё.
+
         val result: List<RMCharacter> = flow.asSnapshot()
 
-        // Assert
+
         assertEquals(listOf(expectedCharacter), result)
     }
 
 
-
     @Test
     fun `refreshCharacters clears local cache`() = runTest {
-        // Arrange
+
         coEvery { localDataSource.clearAllCharacters() } returns Unit
         coEvery { localDataSource.clearAllRemoteKeys() } returns Unit
 
-        // Act
+
         repository.refreshCharacters()
 
-        // Assert
+
         coVerify { localDataSource.clearAllCharacters() }
         coVerify { localDataSource.clearAllRemoteKeys() }
     }
 
     @Test
     fun `getCharacterDetails returns cached data when available`() = runTest {
-        // Arrange
+
         val characterId = 1
         val characterDetailsEntity = CharacterDetailsEntity(
             id = 1,
@@ -168,7 +161,7 @@ class CharacterRepositoryImplTest {
 
     @Test
     fun `getCharacterDetails fetches from remote when cache is empty`() = runTest {
-        // Arrange
+
         val characterId = 1
         val characterDto = CharacterDto(
             id = 1,
@@ -185,29 +178,33 @@ class CharacterRepositoryImplTest {
             created = "date"
         )
         coEvery { detailsLocalDataSource.getCharacterDetails(characterId) } returns null
-        coEvery { remoteDataSource.getCharacterById(characterId) } returns NetworkResult.Success(characterDto)
-        coEvery { detailsLocalDataSource.insertCharacterDetails(any()) } returns Unit // Для сохранения в локальную БД
+        coEvery { remoteDataSource.getCharacterById(characterId) } returns NetworkResult.Success(
+            characterDto
+        )
+        coEvery { detailsLocalDataSource.insertCharacterDetails(any()) } returns Unit
         val expected = Result.Success(characterDto.toCharacterDetailed())
 
-        // Act
+
         val result = repository.getCharacterDetails(characterId)
 
-        // Assert
+
         assertEquals(expected, result)
     }
 
     @Test
     fun `getCharacterDetails returns error on remote failure`() = runTest {
-        // Arrange
+
         val characterId = 1
         val exception = RuntimeException("Network error")
         coEvery { detailsLocalDataSource.getCharacterDetails(characterId) } returns null
-        coEvery { remoteDataSource.getCharacterById(characterId) } returns NetworkResult.Error(exception)
+        coEvery { remoteDataSource.getCharacterById(characterId) } returns NetworkResult.Error(
+            exception
+        )
 
-        // Act
+
         val result = repository.getCharacterDetails(characterId)
 
-        // Assert
+
         assertTrue(result is Result.Error)
         assertEquals(exception, (result as Result.Error).exception)
     }

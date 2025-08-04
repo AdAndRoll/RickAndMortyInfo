@@ -1,11 +1,15 @@
 package com.example.domain.repository
 
 import androidx.paging.PagingData
+import com.example.domain.model.CharacterFilter
 import com.example.domain.model.RMCharacter
 import com.example.domain.model.RMCharacterDetailed
-import com.example.domain.model.CharacterFilter
 import com.example.domain.utils.Result
 import kotlinx.coroutines.flow.Flow
+
+/**
+ * Репозиторий для работы с данными о персонажах
+ */
 
 interface CharacterRepository {
 
