@@ -73,16 +73,25 @@ class EpisodeRepositoryImpl @Inject constructor(
     /**
      * Получает сокращенную информацию о нескольких эпизодах по списку их ID.
      * Исправлено: теперь возвращает список [RMCharacterEpisodeSummary].
+     * Добавлена логика для обработки одного и нескольких ID.
      */
     override suspend fun getEpisodesSummariesByIds(ids: List<Int>): Result<List<RMCharacterEpisodeSummary>> {
         Log.d(TAG, "Attempting to get episode summaries for IDs: $ids")
         return try {
-            // Преобразуем список ID в строку для API-запроса
-            val idsString = ids.joinToString(",")
+            // В зависимости от количества ID, вызываем соответствующий метод
+            val networkResult = if (ids.size == 1) {
+                Log.d(TAG, "Fetching a single episode summary with ID: ${ids.first()}")
+                when (val result = remoteDataSource.getEpisode(ids.first())) {
+                    is NetworkResult.Success -> NetworkResult.Success(listOf(result.data))
+                    is NetworkResult.Error -> NetworkResult.Error(result.exception)
+                }
+            } else {
+                Log.d(TAG, "Fetching multiple episode summaries with IDs: $ids")
+                val idsString = ids.joinToString(",")
+                remoteDataSource.getEpisodesSummariesByIds(idsString)
+            }
 
-            // Выполняем сетевой запрос для получения сокращенных данных.
-            // API возвращает полные DTO, но мы будем маппить их в сокращенную модель.
-            when (val networkResult = remoteDataSource.getEpisodesSummariesByIds(idsString)) {
+            when (networkResult) {
                 is NetworkResult.Success -> {
                     Log.d(TAG, "Network request successful for episode summaries. Mapping DTOs.")
                     // Маппим список полных DTO в список сокращенных моделей
