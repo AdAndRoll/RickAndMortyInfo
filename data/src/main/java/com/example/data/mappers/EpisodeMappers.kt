@@ -1,10 +1,11 @@
+// Файл: com/example/data/mappers/EpisodeMappers.kt
 package com.example.data.mappers
-
 
 import com.example.data.local.entity.RMEpisodeEntity
 import com.example.data.remote.dto.RMEpisodeDto
 import com.example.domain.model.RMEpisode
 import com.example.domain.model.RMCharacterEpisodeSummary
+import com.example.domain.model.Resident
 
 /**
  * Преобразует [RMEpisodeDto] (модель из сети) в [RMEpisodeEntity] (модель для Room).
@@ -24,32 +25,34 @@ fun RMEpisodeDto.toEpisodeEntity(): RMEpisodeEntity {
 
 /**
  * Преобразует [RMEpisodeEntity] (модель из Room) в [RMEpisode] (доменная модель).
- * Используется для предоставления данных из локального кэша доменному слою.
+ * Теперь принимает готовый список персонажей.
+ *
+ * @param characters Список объектов [Resident], содержащих ID и имя.
  */
-fun RMEpisodeEntity.toEpisode(): RMEpisode {
+fun RMEpisodeEntity.toRMEpisode(characters: List<Resident>): RMEpisode {
     return RMEpisode(
         id = this.id,
         name = this.name,
         airDate = this.airDate,
         episodeCode = this.episodeCode,
-        characterUrls = this.characterUrls,
-        url = this.url,
+        characters = characters, // Используем предоставленный список
         created = this.created
     )
 }
 
 /**
  * Преобразует [RMEpisodeDto] (модель из сети) в [RMEpisode] (доменная модель).
- * Используется, если данные напрямую из сети нужно передать в доменный слой.
+ * Теперь принимает готовый список персонажей.
+ *
+ * @param characters Список объектов [Resident], содержащих ID и имя.
  */
-fun RMEpisodeDto.toEpisode(): RMEpisode {
+fun RMEpisodeDto.toRMEpisode(characters: List<Resident>): RMEpisode {
     return RMEpisode(
         id = this.id,
         name = this.name,
         airDate = this.airDate,
         episodeCode = this.episodeCode,
-        characterUrls = this.characterUrls,
-        url = this.url,
+        characters = characters, // Используем предоставленный список
         created = this.created
     )
 }

@@ -22,7 +22,7 @@ class GetLocationDetailsUseCase(
      * @param locationId ID локации.
      * @return [Result] с [LocationDetail] или [Throwable] в случае ошибки.
      */
-    suspend fun execute(locationId: Int): Flow<Result<LocationDetail>> {
+    fun execute(locationId: Int): Flow<Result<LocationDetail>> {
         return locationRepository.getLocationDetails(locationId)
     }
 }

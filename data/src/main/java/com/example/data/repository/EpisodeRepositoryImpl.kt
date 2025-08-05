@@ -3,77 +3,112 @@
 package com.example.data.repository
 
 import android.util.Log
+import com.example.data.local.dao.CharacterDetailsDao
 import com.example.data.local.episodes.datasources.EpisodeLocalDataSource
-import com.example.data.mappers.toEpisode
+import com.example.data.mappers.toCharacterDetailsEntity
 import com.example.data.mappers.toEpisodeEntity
 import com.example.data.mappers.toEpisodeSummary
+import com.example.data.mappers.toRMEpisode
+import com.example.data.remote.datasources.CharacterRemoteDataSource
 import com.example.data.remote.datasources.EpisodeRemoteDataSource
+import com.example.data.remote.dto.CharacterDto
 import com.example.data.utils.NetworkResult
 import com.example.domain.model.RMCharacterEpisodeSummary
 import com.example.domain.model.RMEpisode
+import com.example.domain.model.Resident
 import com.example.domain.repository.EpisodeRepository
 import com.example.domain.utils.Result
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * Реализация репозитория для работы с данными об эпизодах.
  * Координирует получение данных из удаленного и локального источников.
  *
- * @param remoteDataSource Источник данных для сетевых запросов.
- * @param localDataSource Источник данных для локальной базы данных.
+ * @param remoteDataSource Источник данных для сетевых запросов эпизодов.
+ * @param localDataSource Источник данных для локальной базы данных эпизодов.
+ * @param characterRemoteDataSource Источник данных для сетевых запросов персонажей.
+ * @param characterDetailsDao DAO для доступа к деталям персонажей в базе данных.
  */
 class EpisodeRepositoryImpl @Inject constructor(
     private val remoteDataSource: EpisodeRemoteDataSource,
-    private val localDataSource: EpisodeLocalDataSource
+    private val localDataSource: EpisodeLocalDataSource,
+    private val characterRemoteDataSource: CharacterRemoteDataSource,
+    private val characterDetailsDao: CharacterDetailsDao
 ) : EpisodeRepository {
 
     private val TAG = "EpisodeRepositoryImpl"
 
     /**
-     * Получает полную информацию об одном эпизоде по его ID.
+     * Получает полную информацию об одном эпизоде по его ID в виде реактивного потока.
+     * Логика полностью повторяет подход из LocationRepositoryImpl:
+     * 1. Сначала отправляет данные из кэша.
+     * 2. Выполняет сетевой запрос.
+     * 3. Загружает персонажей, сохраняет их в кэш.
+     * 4. Отправляет обновленный результат.
+     *
+     * @param episodeId ID эпизода.
+     * @return [Flow] с объектом [Result<RMEpisode>], который содержит данные
+     * или информацию об ошибке.
      */
-    override suspend fun getEpisode(episodeId: Int): Result<RMEpisode> {
+    override fun getEpisode(episodeId: Int): Flow<Result<RMEpisode>> = flow {
         Log.d(TAG, "Attempting to get episode with ID: $episodeId")
-        return try {
-            // 1. Попытка получить данные из локального источника
-            Log.d(TAG, "Checking local data source for episode with ID: $episodeId")
-            val localData = localDataSource.getEpisode(episodeId)
-            if (localData != null) {
-                // Если данные найдены, маппим их в доменную модель и возвращаем
-                Log.d(TAG, "Local data found for episode with ID: $episodeId. Mapping to domain model.")
-                Result.Success(localData.toEpisode())
-            } else {
-                // 2. Если данных в кэше нет, выполняем сетевой запрос через remoteDataSource
-                Log.d(TAG, "Local data not found. Making network request for episode with ID: $episodeId")
-                when (val networkResult = remoteDataSource.getEpisode(episodeId)) {
-                    is NetworkResult.Success -> {
-                        Log.d(TAG, "Network request successful for episode with ID: $episodeId. Saving to cache.")
-                        // Маппим DTO в Entity и сохраняем в кэш
-                        val episodeEntity = networkResult.data.toEpisodeEntity()
-                        localDataSource.insertEpisode(episodeEntity)
-                        Log.d(TAG, "Successfully saved episode to local database.")
 
-                        // Маппим DTO в доменную модель и возвращаем
-                        Result.Success(networkResult.data.toEpisode())
-                    }
-                    is NetworkResult.Error -> {
-                        // Если сетевой запрос завершился ошибкой
-                        Log.e(TAG, "Network error for episode with ID: $episodeId", networkResult.exception)
-                        Result.Error(networkResult.exception)
-                    }
+        // 1. Сначала пытаемся получить данные из локального кэша
+        val localData = localDataSource.getEpisode(episodeId)
+        if (localData != null) {
+            Log.d(TAG, "Local data found for episode with ID: $episodeId. Emitting cached data.")
+            // Получаем персонажей из локальной базы
+            val characters = getCharacters(localData.characterUrls)
+            // Маппим все в доменную модель и отправляем в поток
+            emit(Result.Success(localData.toRMEpisode(characters)))
+        }
+
+        // 2. Выполняем сетевой запрос, чтобы получить актуальные данные
+        Log.d(TAG, "Making network request for episode with ID: $episodeId")
+        when (val networkResult = remoteDataSource.getEpisode(episodeId)) {
+            is NetworkResult.Success -> {
+                Log.d(TAG, "Network request successful. Saving to cache.")
+                // Маппим DTO в Entity и сохраняем в кэш
+                val episodeEntity = networkResult.data.toEpisodeEntity()
+                localDataSource.insertEpisode(episodeEntity)
+
+                // Получаем ID персонажей из URL-адресов
+                val characterIds = episodeEntity.characterUrls.mapNotNull { url ->
+                    url.substringAfterLast("/").toIntOrNull()
+                }
+
+                // Загружаем и сохраняем персонажей в локальную базу.
+                // В отличие от локаций, здесь мы не разделяем на "первые 30" и "остальные",
+                // так как количество персонажей в эпизодах обычно невелико.
+                // Но логика `fetchAndSaveCharacters` используется та же.
+                fetchAndSaveCharacters(characterIds)
+
+                // Получаем персонажей из локальной базы (уже сохраненных)
+                val characters = getCharacters(episodeEntity.characterUrls)
+
+                // Отправляем в поток обновленную доменную модель
+                Log.d(TAG, "Successfully saved episode and characters. Emitting updated data.")
+                emit(Result.Success(networkResult.data.toRMEpisode(characters)))
+            }
+            is NetworkResult.Error -> {
+                Log.e(TAG, "Network error for episode with ID: $episodeId", networkResult.exception)
+                // Если произошла ошибка сети и локальных данных не было,
+                // отправляем в поток ошибку
+                if (localData == null) {
+                    emit(Result.Error(networkResult.exception))
                 }
             }
-        } catch (e: Exception) {
-            // Обработка любых других неожиданных исключений
-            Log.e(TAG, "An unexpected exception occurred while getting episode with ID: $episodeId", e)
-            Result.Error(e)
         }
     }
 
     /**
      * Получает сокращенную информацию о нескольких эпизодах по списку их ID.
-     * Исправлено: теперь возвращает список [RMCharacterEpisodeSummary].
-     * Добавлена логика для обработки одного и нескольких ID.
+     * Эта функция не использует Flow, так как ее логика не требует реактивного обновления.
      */
     override suspend fun getEpisodesSummariesByIds(ids: List<Int>): Result<List<RMCharacterEpisodeSummary>> {
         Log.d(TAG, "Attempting to get episode summaries for IDs: $ids")
@@ -109,7 +144,58 @@ class EpisodeRepositoryImpl @Inject constructor(
             Result.Error(e)
         }
     }
+
+    /**
+     * Вспомогательная функция для получения списка объектов Resident (ID и имя)
+     * по их URL-адресам из локальной базы данных.
+     *
+     * @param characterUrls Список URL-адресов персонажей.
+     * @return Список объектов [Resident].
+     */
+    private suspend fun getCharacters(characterUrls: List<String>): List<Resident> {
+        return characterUrls.mapNotNull { url ->
+            val characterId = url.substringAfterLast("/").toIntOrNull()
+            if (characterId != null) {
+                val characterEntity = characterDetailsDao.getCharacterDetailsById(characterId)
+                characterEntity?.let { Resident(id = it.id, name = it.name) }
+            } else {
+                null
+            }
+        }
+    }
+
+    /**
+     * Получает детали нескольких персонажей по списку ID и сохраняет их в локальной базе данных.
+     * Улучшено для обработки запросов с одним и несколькими ID.
+     *
+     * @param characterIds Список ID персонажей.
+     */
+    private suspend fun fetchAndSaveCharacters(characterIds: List<Int>) {
+        if (characterIds.isEmpty()) return
+
+        val remoteResult = if (characterIds.size == 1) {
+            characterRemoteDataSource.getCharacterById(characterIds.first())
+        } else {
+            characterRemoteDataSource.getCharactersByIds(characterIds)
+        }
+
+        when (remoteResult) {
+            is NetworkResult.Success -> {
+                val characters = if (remoteResult.data is List<*>) {
+                    remoteResult.data as List<CharacterDto>
+                } else {
+                    listOf(remoteResult.data as CharacterDto)
+                }
+                val characterEntities = characters.map { it.toCharacterDetailsEntity() }
+                characterEntities.forEach { characterDetailsDao.insertCharacterDetails(it) }
+            }
+            is NetworkResult.Error -> {
+                Log.e(TAG, "Error fetching characters with IDs $characterIds: ${remoteResult.exception.message}")
+            }
+        }
+    }
 }
+
 
 /**
  * Вспомогательная функция для безопасного вызова API,

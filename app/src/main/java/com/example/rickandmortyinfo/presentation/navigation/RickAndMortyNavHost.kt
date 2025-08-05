@@ -78,7 +78,6 @@ fun RickAndMortyNavHost() {
                     }
                     navController.navigate(route)
                 },
-                // Добавлена новая навигация на экран деталей эпизода
                 onEpisodeClick = { episodeId ->
                     navController.navigate("episode_detail/$episodeId")
                 }
@@ -104,7 +103,6 @@ fun RickAndMortyNavHost() {
             )
         }
 
-        // Новый composable для экрана деталей эпизода
         composable(
             route = "episode_detail/{episodeId}",
             arguments = listOf(navArgument("episodeId") { type = NavType.IntType })
@@ -113,6 +111,9 @@ fun RickAndMortyNavHost() {
             EpisodeDetailScreen(
                 onBackClick = {
                     navController.popBackStack()
+                },
+                onCloseClick = {
+                    navController.popBackStack("character_list", false)
                 },
                 onCharacterClick = { characterId ->
                     navController.navigate("character_detail/$characterId")

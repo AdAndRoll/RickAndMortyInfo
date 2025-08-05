@@ -101,9 +101,16 @@ object DataModule {
     @Singleton
     fun provideEpisodeRepository(
         remoteDataSource: EpisodeRemoteDataSource,
-        localDataSource: EpisodeLocalDataSource
+        localDataSource: EpisodeLocalDataSource,
+        characterRemoteDataSource: CharacterRemoteDataSource,
+        characterDetailsDao: CharacterDetailsDao
     ): EpisodeRepository {
-        return EpisodeRepositoryImpl(remoteDataSource, localDataSource)
+        return EpisodeRepositoryImpl(
+            remoteDataSource,
+            localDataSource,
+            characterRemoteDataSource,
+            characterDetailsDao
+        )
     }
 
 

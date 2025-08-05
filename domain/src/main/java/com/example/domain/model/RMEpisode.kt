@@ -16,7 +16,6 @@ data class RMEpisode(
     val name: String,
     val airDate: String?,
     val episodeCode: String,
-    val characterUrls: List<String>,
-    val url: String,
+    val characters: List<Resident>,
     val created: String
 )

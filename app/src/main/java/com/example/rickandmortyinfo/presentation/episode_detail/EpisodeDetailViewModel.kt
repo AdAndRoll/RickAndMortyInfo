@@ -3,7 +3,6 @@ package com.example.rickandmortyinfo.presentation.episode_detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.domain.model.RMEpisode
 import com.example.domain.usecases.GetSingleEpisodeUseCase
 import com.example.domain.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,18 +11,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
-
 /**
  * ViewModel для экрана с детальной информацией об эпизоде.
- * Использует Hilt для инъекции зависимостей.
  *
- * @property getEpisodeDetailsUseCase Use Case для получения данных об одном эпизоде.
+ * @property getSingleEpisodeUseCase Use Case для получения данных об одном эпизоде.
  * @property savedStateHandle Объект для сохранения и восстановления состояния.
  */
 @HiltViewModel
 class EpisodeDetailViewModel @Inject constructor(
-    private val getEpisodeDetailsUseCase: GetSingleEpisodeUseCase,
+    private val getSingleEpisodeUseCase: GetSingleEpisodeUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -31,26 +27,33 @@ class EpisodeDetailViewModel @Inject constructor(
     val episodeDetailState: StateFlow<EpisodeDetailState> = _episodeDetailState
 
     init {
-        // Получаем ID эпизода из SavedStateHandle, который будет передан из навигации
+        // Получаем ID эпизода из savedStateHandle, который передается навигацией.
         savedStateHandle.get<Int>("episodeId")?.let { episodeId ->
             loadEpisodeDetails(episodeId)
         }
     }
 
     /**
-     * Загружает полную информацию об эпизоде.
+     * Загружает полную информацию об эпизоде по его ID.
      * @param episodeId ID эпизода.
      */
-    fun loadEpisodeDetails(episodeId: Int) {
+    private fun loadEpisodeDetails(episodeId: Int) {
         viewModelScope.launch {
+            // --- ПРАВИЛЬНО: Состояние загрузки устанавливается здесь, до начала запроса.
             _episodeDetailState.value = EpisodeDetailState.Loading
-            when (val result = getEpisodeDetailsUseCase.execute(episodeId)) {
-                is Result.Success -> {
-                    _episodeDetailState.value = EpisodeDetailState.Success(result.data)
-                }
-                is Result.Error -> {
-                    _episodeDetailState.value =
-                        EpisodeDetailState.Error("Не удалось загрузить детали эпизода: ${result.exception.message}")
+
+            // Вызываем Use Case и "собираем" (collect) его Flow.
+            getSingleEpisodeUseCase.execute(episodeId).collect { result ->
+                when (result) {
+                    // Обрабатываем только Success и Error, как в вашем классе Result.
+                    is Result.Success -> {
+                        _episodeDetailState.value = EpisodeDetailState.Success(result.data)
+                    }
+                    is Result.Error -> {
+                        _episodeDetailState.value = EpisodeDetailState.Error(
+                            result.exception.message ?: "Неизвестная ошибка"
+                        )
+                    }
                 }
             }
         }

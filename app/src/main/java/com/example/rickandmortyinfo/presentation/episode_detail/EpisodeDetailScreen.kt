@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -33,12 +34,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.domain.model.RMEpisode
+
 import com.example.rickandmortyinfo.presentation.character_detail.components.DetailText
 
 /**
  * Компонуемая функция для экрана с детальной информацией об эпизоде.
  *
  * @param onBackClick Функция, которая будет вызвана при нажатии кнопки "назад".
+ * @param onCloseClick Функция, которая будет вызвана при нажатии кнопки "закрыть".
  * @param onCharacterClick Функция, которая будет вызвана при нажатии на персонажа.
  * @param viewModel ViewModel для управления состоянием экрана, предоставляемый Hilt.
  */
@@ -46,6 +50,7 @@ import com.example.rickandmortyinfo.presentation.character_detail.components.Det
 @Composable
 fun EpisodeDetailScreen(
     onBackClick: () -> Unit,
+    onCloseClick: () -> Unit,
     onCharacterClick: (Int) -> Unit,
     viewModel: EpisodeDetailViewModel = hiltViewModel()
 ) {
@@ -69,6 +74,14 @@ fun EpisodeDetailScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = onCloseClick) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Кнопка закрыть"
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
                 )
@@ -88,7 +101,8 @@ fun EpisodeDetailScreen(
             }
 
             is EpisodeDetailState.Success -> {
-                val episode = currentState.episode
+                val episode: RMEpisode = currentState.episode
+
                 Card(
                     modifier = Modifier
                         .fillMaxSize()
@@ -127,13 +141,12 @@ fun EpisodeDetailScreen(
                         item {
                             DetailText(
                                 label = "Дата выхода",
-                                // Обрабатываем null-значение для airDate
                                 value = episode.airDate ?: "Неизвестно",
                                 onClick = { /* Нет фильтрации по дате, поэтому действие не требуется */ }
                             )
                         }
 
-                        if (episode.characterUrls.isNotEmpty()) {
+                        if (episode.characters.isNotEmpty()) {
                             item {
                                 Text(
                                     text = "Персонажи в эпизоде",
@@ -143,27 +156,29 @@ fun EpisodeDetailScreen(
                                         .padding(top = 16.dp, bottom = 8.dp)
                                 )
                             }
-                            items(episode.characterUrls, key = { it }) { characterUrl ->
-                                val characterId = characterUrl.substringAfterLast("/").toIntOrNull()
-                                if (characterId != null) {
-                                    Card(
+                            // Теперь мы используем список объектов персонажей, а не просто URL.
+                            // Для этого необходимо, чтобы ViewModel предоставил этот список.
+                            items(episode.characters) { character ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable {
+                                            onCharacterClick(character.id)
+                                        }
+                                ) {
+                                    Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 4.dp)
-                                            .clickable { onCharacterClick(characterId) }
+                                            .padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = "Персонаж #$characterId",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                        }
+                                        Text(
+                                            // Отображаем имя персонажа
+                                            text = character.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f)
+                                        )
                                     }
                                 }
                             }

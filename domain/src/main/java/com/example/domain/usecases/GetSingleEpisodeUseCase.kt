@@ -3,7 +3,7 @@ package com.example.domain.usecases
 import com.example.domain.model.RMEpisode
 import com.example.domain.repository.EpisodeRepository
 import com.example.domain.utils.Result
-
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Use Case для получения детальной информации об одном эпизоде.
@@ -12,12 +12,15 @@ import com.example.domain.utils.Result
  */
 class GetSingleEpisodeUseCase(private val repository: EpisodeRepository) {
     /**
-     * Вызывает метод репозитория для получения детальной информации об эпизоде.
+     * Вызывает метод репозитория для получения детальной информации об эпизоде
+     * в виде реактивного потока.
      *
      * @param episodeId ID эпизода.
-     * @return [Result] с [RMEpisode] в случае успеха, или [Throwable] в случае ошибки.
+     * @return [Flow] с [Result] с [RMEpisode] в случае успеха, или [Throwable] в случае ошибки.
      */
-    suspend fun execute(episodeId: Int): Result<RMEpisode> {
+    fun execute(episodeId: Int): Flow<Result<RMEpisode>> {
+        // Теперь use case напрямую возвращает Flow из репозитория.
+        // Ключевое слово suspend больше не нужно.
         return repository.getEpisode(episodeId)
     }
 }
