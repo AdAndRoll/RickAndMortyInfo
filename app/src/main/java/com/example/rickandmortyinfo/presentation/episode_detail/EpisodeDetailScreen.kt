@@ -1,5 +1,7 @@
 package com.example.rickandmortyinfo.presentation.episode_detail
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -30,12 +33,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.domain.model.RMEpisode
-
 import com.example.rickandmortyinfo.presentation.character_detail.components.DetailText
 
 /**
@@ -55,6 +58,7 @@ fun EpisodeDetailScreen(
     viewModel: EpisodeDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.episodeDetailState.collectAsState()
+    val context = LocalContext.current // Получаем текущий Context для запуска Intent
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -146,6 +150,56 @@ fun EpisodeDetailScreen(
                             )
                         }
 
+                        // Новая кнопка для просмотра эпизода
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .clickable {
+                                        // Извлекаем номера сезона и эпизода из строки "S01E01"
+                                        val parts = episode.episodeCode
+                                            .removePrefix("S") // Удаляем "S"
+                                            .split("E")      // Разделяем по "E"
+                                            .map { it.toIntOrNull() ?: 0 } // Преобразуем в числа
+
+                                        // Убедимся, что номера существуют
+                                        if (parts.size == 2) {
+                                            val season = parts[0]
+                                            val episodeNumber = parts[1]
+
+                                            // Составляем URL по заданной структуре
+                                            val url = "https://rick-i-morty.com/episodes/${season}sez-${episodeNumber}seriya/"
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                            context.startActivity(intent)
+                                        }
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                        contentDescription = "Смотреть эпизод",
+                                        tint = Color.White
+                                    )
+                                    Text(
+                                        text = "Смотреть эпизод",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+
                         if (episode.characters.isNotEmpty()) {
                             item {
                                 Text(
@@ -156,8 +210,6 @@ fun EpisodeDetailScreen(
                                         .padding(top = 16.dp, bottom = 8.dp)
                                 )
                             }
-                            // Теперь мы используем список объектов персонажей, а не просто URL.
-                            // Для этого необходимо, чтобы ViewModel предоставил этот список.
                             items(episode.characters) { character ->
                                 Card(
                                     modifier = Modifier
@@ -174,7 +226,6 @@ fun EpisodeDetailScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            // Отображаем имя персонажа
                                             text = character.name,
                                             style = MaterialTheme.typography.bodyMedium,
                                             modifier = Modifier.weight(1f)
