@@ -37,7 +37,7 @@ import com.example.data.local.entity.RemoteKeyEntity
     version = 14,
     exportSchema = false
 )
-// Теперь мы регистрируем оба конвертера, чтобы Room знал, как их использовать.
+
 @TypeConverters(
     CharacterTypeConverters::class
 )

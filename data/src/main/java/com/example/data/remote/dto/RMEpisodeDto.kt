@@ -14,8 +14,6 @@ data class RMEpisodeDto(
     val name: String,
     @Json(name = "air_date")
     val airDate: String,
-    // Исправлено: заменено `@SerializedName("episode")` на `@Json(name = "episode")`
-    // для корректной работы Moshi с полем "episodeCode".
     @Json(name = "episode")
     val episodeCode: String,
     @Json(name = "characters")

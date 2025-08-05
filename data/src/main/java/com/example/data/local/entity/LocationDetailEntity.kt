@@ -32,7 +32,7 @@ data class LocationDetailEntity(
      */
     fun getResidentIds(): List<Int> {
         return residents.mapNotNull {
-            // Извлекаем ID из URL, например, "https://rickandmortyapi.com/api/character/1" -> 1
+
             it.substringAfterLast("/").toIntOrNull()
         }
     }

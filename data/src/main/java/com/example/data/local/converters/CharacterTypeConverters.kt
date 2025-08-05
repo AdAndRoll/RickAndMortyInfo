@@ -18,7 +18,7 @@ import javax.inject.Inject
 @ProvidedTypeConverter
 class CharacterTypeConverters @Inject constructor(private val moshi: Moshi) {
 
-    // Создаем адаптер Moshi для преобразования списка строк.
+
     private val stringListAdapter: JsonAdapter<List<String>> = moshi.adapter(
         Types.newParameterizedType(List::class.java, String::class.java)
     )

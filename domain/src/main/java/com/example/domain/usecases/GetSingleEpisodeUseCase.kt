@@ -19,8 +19,6 @@ class GetSingleEpisodeUseCase(private val repository: EpisodeRepository) {
      * @return [Flow] с [Result] с [RMEpisode] в случае успеха, или [Throwable] в случае ошибки.
      */
     fun execute(episodeId: Int): Flow<Result<RMEpisode>> {
-        // Теперь use case напрямую возвращает Flow из репозитория.
-        // Ключевое слово suspend больше не нужно.
         return repository.getEpisode(episodeId)
     }
 }

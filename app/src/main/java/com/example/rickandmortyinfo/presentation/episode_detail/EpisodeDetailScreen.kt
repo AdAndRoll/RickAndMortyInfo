@@ -58,7 +58,7 @@ fun EpisodeDetailScreen(
     viewModel: EpisodeDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.episodeDetailState.collectAsState()
-    val context = LocalContext.current // Получаем текущий Context для запуска Intent
+    val context = LocalContext.current
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -146,29 +146,29 @@ fun EpisodeDetailScreen(
                             DetailText(
                                 label = "Дата выхода",
                                 value = episode.airDate ?: "Неизвестно",
-                                onClick = { /* Нет фильтрации по дате, поэтому действие не требуется */ }
+                                onClick = {  }
                             )
                         }
 
-                        // Новая кнопка для просмотра эпизода
+
                         item {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                                     .clickable {
-                                        // Извлекаем номера сезона и эпизода из строки "S01E01"
-                                        val parts = episode.episodeCode
-                                            .removePrefix("S") // Удаляем "S"
-                                            .split("E")      // Разделяем по "E"
-                                            .map { it.toIntOrNull() ?: 0 } // Преобразуем в числа
 
-                                        // Убедимся, что номера существуют
+                                        val parts = episode.episodeCode
+                                            .removePrefix("S")
+                                            .split("E")
+                                            .map { it.toIntOrNull() ?: 0 }
+
+
                                         if (parts.size == 2) {
                                             val season = parts[0]
                                             val episodeNumber = parts[1]
 
-                                            // Составляем URL по заданной структуре
+
                                             val url = "https://rick-i-morty.com/episodes/${season}sez-${episodeNumber}seriya/"
                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                             context.startActivity(intent)

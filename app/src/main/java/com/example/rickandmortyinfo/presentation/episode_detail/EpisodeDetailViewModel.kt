@@ -27,7 +27,7 @@ class EpisodeDetailViewModel @Inject constructor(
     val episodeDetailState: StateFlow<EpisodeDetailState> = _episodeDetailState
 
     init {
-        // Получаем ID эпизода из savedStateHandle, который передается навигацией.
+
         savedStateHandle.get<Int>("episodeId")?.let { episodeId ->
             loadEpisodeDetails(episodeId)
         }
@@ -39,13 +39,13 @@ class EpisodeDetailViewModel @Inject constructor(
      */
     private fun loadEpisodeDetails(episodeId: Int) {
         viewModelScope.launch {
-            // --- ПРАВИЛЬНО: Состояние загрузки устанавливается здесь, до начала запроса.
+
             _episodeDetailState.value = EpisodeDetailState.Loading
 
-            // Вызываем Use Case и "собираем" (collect) его Flow.
+
             getSingleEpisodeUseCase.execute(episodeId).collect { result ->
                 when (result) {
-                    // Обрабатываем только Success и Error, как в вашем классе Result.
+
                     is Result.Success -> {
                         _episodeDetailState.value = EpisodeDetailState.Success(result.data)
                     }
