@@ -46,8 +46,8 @@ dependencies {
 
     implementation(project(":domain")) {
         exclude(group = "androidx.paging", module = "paging-common-jvm")
-    } // Зависимость от модуля domain
-    implementation(project(":data"))   // Зависимость от модуля data
+    } 
+    implementation(project(":data"))
 
     // Compose
     implementation(libs.androidx.core.ktx)
