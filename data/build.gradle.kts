@@ -40,7 +40,6 @@ android {
 
 dependencies {
 
-    // Existing dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -48,18 +47,13 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Project Module Dependencies
-    // Data Layer depends on Domain Layer
+
     implementation(project(":domain")) {
         exclude(group = "androidx.paging", module = "paging-common-jvm")
-    } // Зависимость от модуля domain
+    } 
 
     // Retrofit for network requests
     implementation(libs.retrofit)
-     // For JSON conversion (вам также нужно converter.moshi, если используете Moshi)
-    // У вас в app-модуле: implementation(libs.converter.moshi)
-    // Убедитесь, что используете один и тот же конвертер: Moshi или Gson
-    // Если используете Moshi, то:
     implementation(libs.converter.moshi)
     implementation(libs.moshi.kotlin)
 
@@ -75,10 +69,9 @@ dependencies {
 
 
     // Hilt for Dependency Injection
-    implementation(libs.hilt.android) // Используйте псевдоним
+    implementation(libs.hilt.android)
     ksp(libs.hilt.compiler) // Hilt annotation processor
 
-    // Logging Interceptor (Good for debugging network requests) - Optional but highly recommended
     implementation(libs.logging.interceptor)
 
 
